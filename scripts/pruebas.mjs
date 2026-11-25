@@ -221,5 +221,30 @@ titulo('D4 · reservar la serie de las próximas semanas')
     'repetirla no duplica reservas')
 }
 
+titulo('paquetes: el alumno pide y sólo el studio activa')
+{
+  st.salir(); refrescar()
+  st.registrar({ nombre: 'Nueva Alumna', email: 'nueva@mail.com', telefono: '70000000', pin: '2222' })
+  refrescar()
+  const id = st.usuario.id
+  ok(st.usuario.rol === 'alumno' && st.usuario.plan.clasesRestantes === 0, 'nace sin clases')
+  const c = diasAbiertos().flatMap((d) => st.clasesDeDia(d.iso)).find((x) => x.libres > 0)
+  const n = c.plano.find((x) => x.libre).numero
+  ok(!st.reservar(c.fecha, c.hora, n).ok, 'sin paquete no puede reservar')
+  st.solicitarPlan('cuatro'); refrescar()
+  ok(st.usuario.solicitud === 'cuatro' && st.usuario.plan.clasesRestantes === 0, 'pedirlo no da clases')
+  st.resolverSolicitud(id, true); refrescar()
+  ok(st.usuario.plan.clasesRestantes === 0, 'no puede activárselo a sí misma')
+  st.entrar('studio@pilates.com', '1111'); refrescar()
+  st.resolverSolicitud(id, true); refrescar()
+  const q = () => st.usuarioPorId(id)
+  ok(q().plan.clasesRestantes === 4 && q().solicitud === null, 'el studio lo activa')
+  st.entrar('nueva@mail.com', '2222'); refrescar()
+  st.solicitarPlan('suelta'); refrescar()
+  st.entrar('studio@pilates.com', '1111'); refrescar()
+  st.resolverSolicitud(id, true); refrescar()
+  ok(q().plan.id === 'cuatro' && q().plan.clasesRestantes === 5, 'la clase suelta se suma')
+}
+
 console.log(fallas === 0 ? '\nTodo bien.' : `\n${fallas} fallas.`)
 process.exit(fallas === 0 ? 0 : 1)

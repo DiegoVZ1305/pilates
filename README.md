@@ -15,10 +15,10 @@ En la pantalla de entrada hay dos botones de acceso rápido:
 
 | Cuenta | Email | PIN | Qué ve |
 |---|---|---|---|
-| Alumna | `demo@pilates.com` | `1234` | Reservar, mis clases, docentes, perfil |
-| Studio | `studio@pilates.com` | `1111` | Todo lo anterior + el panel de administración |
+| Alumna | `demo@pilates.com` | `1234` | La web, con sus reservas y el pedido de paquetes |
+| Studio | `studio@pilates.com` | `1111` | Sólo el panel de administración |
 
-También se puede crear una cuenta nueva desde cero (dos pasos: datos y PIN + plan).
+También se puede crear una cuenta nueva desde cero (dos pasos: datos y PIN). Nace sin clases.
 
 ---
 
@@ -28,54 +28,45 @@ También se puede crear una cuenta nueva desde cero (dos pasos: datos y PIN + pl
 Lo primero que ve alguien que entra sin cuenta, en la línea de los studios de pilates
 que suelen publicarse con Mindbody:
 - **Hero** a pantalla completa con el nombre en tipografía display y botones de reserva.
-- **Manifiesto** en franja rosa empolvado, **tres pilares** (flexibilidad, fuerza, resistencia)
+- **Manifiesto** con el logo sobre fondo de cemento, **tres pilares** (flexibilidad, fuerza, resistencia)
   y la **grilla de tipos de clase**.
-- **¿Por qué nosotros?** en crema rosado, con el plano de la sala dibujado como argumento de
+- **¿Por qué nosotros?** en amarillo suave, con el plano de la sala dibujado como argumento de
   venta ("elegís tu camilla").
 - **Frase** a todo ancho, **coaches** con las fichas del equipo y **paquetes** con precios.
 - **Horarios reales**: muestra la disponibilidad de verdad de los próximos días, tomada
-  del mismo estado que usa la app. Cada botón lleva al login.
+  del mismo estado que usa la app. Sin sesión, cada botón lleva al login.
 - **Footer** con dirección, horario de atención, redes y accesos a reservar.
 - Las secciones tienen deep link (`/#horarios`, `/#paquetes`) para compartir.
 
-**Fotos**: el sitio funciona sin ninguna imagen — donde va una foto se dibuja un bloque
-gráfico. Para poner las reales, dejá los archivos en `public/fotos/` y cargá la ruta en
-`FOTOS` dentro de `src/lib/config.js` (hay instrucciones en `public/fotos/LEEME.txt`).
-Los textos, la dirección y los pilares salen de `SITIO` en el mismo archivo.
+**Fotos y logos**: los originales están en `Assets/`. `npm run marca` (Python 3 con Pillow)
+genera lo que usa la web en `public/marca/`, `public/fotos/`, los iconos y el manifest. Las
+rutas están en `FOTOS` y `LOGOS` dentro de `src/lib/config.js`; los textos, en `SITIO`.
 
 ### Cuenta y acceso
 - Entrar con email + PIN, o crear cuenta en dos pasos con validación de cada campo.
-- Elección de plan al registrarse.
-- Menú de usuario en el header con perfil, mis clases y cerrar sesión.
+- **El alumno no tiene panel**: al entrar vuelve a la web y la sección de horarios se
+  convierte en su reserva, con sus clases disponibles, avisos, reservas y cerrar sesión.
+- **El studio entra directo a su panel** y no ve las pantallas de alumno.
+
+### Paquetes
+- El alumno **pide** un paquete desde la web; queda pendiente.
+- El studio lo **activa** (cuando recibió el pago) o lo rechaza desde *Pedidos*.
+- Un abono reemplaza al anterior; la clase suelta se suma y no se renueva.
 
 ### Reservar
 
-El flujo es **semana → día → horario**, en ese orden y en una sola pantalla.
+La reserva va **por pasos**, y cada uno aparece cuando el anterior está resuelto:
+**día → tipo de clase → profe (o cualquiera) → hora y camilla**. Cambiar un paso
+reinicia los siguientes.
 
-- **Calendario por semana**: los siete días de lunes a domingo, con flechas para pasar a
-  la semana siguiente (se reservan 14 días, así que son dos semanas y media). Cada día
-  muestra cuántos **lugares libres** le quedan y una barrita de ocupación, los cerrados
-  quedan apagados y un punto rosa marca los días en los que ya tenés clase.
-- **Filtros a la vista**: un renglón de clases y otro de profes, con la foto de cada una.
-  Lo que ese día no se da aparece deshabilitado, así que no se puede filtrar hasta dejar
-  la lista vacía. Se suma el check de "solo con lugar".
-- **Horarios del día en lista**, partidos en **mañana** y **tarde** y ordenados por hora.
-  Cada fila trae la hora y la duración, el tipo y el nivel, **quién da la clase** (foto,
-  nombre y especialidad), el estado (*N libres*, *completa*, *tu camilla*, *en espera*,
-  *terminada*), el mini plano de las 10 camillas y el botón de reserva.
-- Si el studio no abre ese día, el estado vacío ofrece el **próximo día con clases**.
-- Banner con **tu próxima clase** y cuánto falta, que abre el plano directo.
-- La **camilla favorita** del perfil viene preseleccionada al abrir el plano (si está
-  libre), y la **profe favorita** aparece primera entre los filtros y con una estrella
-  en los horarios que da. No se filtra sola: el orden por hora manda al elegir.
+- **Calendario por semana** de borde a borde, con flechas, lugares libres por día,
+  días cerrados apagados y un punto en los que ya tenés clase.
+- Cada paso ofrece sólo lo que ese día todavía se da.
+- **Tus reservas** debajo de los pasos, con acceso al plano y cancelar.
 - **Cancelar pide confirmación** y dice antes qué pasa con la clase: vuelve al plan, o
-  no vuelve si faltan menos de 2 h. Se puede cancelar desde la fila de "mis clases",
-  sin abrir el plano.
-- **Bandeja de avisos**: si entrás desde la lista de espera o el studio cierra tu día,
-  te queda el aviso arriba de "mis clases" con un punto en la pestaña.
-- **Repetir semanal**: desde un horario guardado se reservan de una vez todas las
-  fechas que entren en los próximos 14 días, con tu camilla de siempre cuando está
-  libre, respetando el plan y el tope de reservas.
+  no vuelve si faltan menos de 2 h.
+- **Bandeja de avisos**: si entrás desde la lista de espera, el studio cierra tu día o
+  activa tu paquete, te queda el aviso arriba de los pasos.
 
 ### Plano de la sala
 - Pantalla grande con la sala dibujada: paredes, piso, puerta, ventanas y los reformers
@@ -96,27 +87,8 @@ El flujo es **semana → día → horario**, en ese orden y en una sola pantalla
   clases en el plan**, toma la camilla que quedó libre, se le descuenta la clase y le
   queda un aviso en su cuenta.
 
-### Mis clases
-- **Próximas**: con camilla, cuánto falta y acceso al plano.
-- **Guardadas**: horarios fijos de la semana marcados como favoritos (★ en el plano),
-  con la ocupación de la próxima fecha, botón para reservar de un toque y **Repetir
-  semanal** para tomar de una vez todas las fechas que entren en los próximos 14 días.
-- **Historial**: clases pasadas con asistencia (*asististe* / *faltaste*), más estadísticas:
-  clases hechas, racha sin faltar, ausencias y clase favorita.
-
-### Docentes
-- Ficha de cada profe: especialidad, bio, años en el studio, reservas acumuladas y sus
-  próximas clases, clickeables para ir al plano.
-
-### Perfil
-- Datos editables, incluido un campo de **lesiones / cosas a tener en cuenta** que el
-  docente ve en su lista de asistencia.
-- **Plan**: clases restantes con barra de progreso y cambio de plan. Reservar descuenta
-  una clase; cancelar con más de 2 h la devuelve, cancelar sobre la hora no.
-- **Preferencias**: camilla favorita, docente favorito y recordatorio 2 h antes.
-- Actividad: clases hechas, ausencias, clase y docente más frecuentes.
-
 ### Panel del studio (admin)
+- **Pedidos**: paquetes pendientes de activar.
 - **Agenda**: métricas del día (anotados, ocupación, clases completas, en espera) y por
   cada clase la lista de quién viene con su camilla, su teléfono, su alerta de lesión y
   botones para marcar **asistió / ausente**. También la lista de espera.
@@ -146,25 +118,23 @@ src/
   lib/db.js        estado completo (usuarios, reservas, espera, grilla, sala)
                    + todas las acciones, persistido en localStorage
   components/
-    Landing.jsx       sitio público: hero, paquetes, horarios, footer
+    Landing.jsx       la web: hero, paquetes, horarios, footer
+    Cuenta.jsx        la reserva del alumno con sesión, dentro de la web
     Auth.jsx          entrar y crear cuenta
     Reservar.jsx      semana, filtros y lista de horarios del día
     ClaseDetalle.jsx  pantalla grande de la clase
     PlanoSala.jsx     el plano y el dibujo SVG del reformer
-    MisClases.jsx     próximas, guardadas e historial
-    Docentes.jsx      fichas del equipo
-    Perfil.jsx        datos, plan, preferencias y actividad
-    Admin.jsx         agenda, grilla, sala y alumnos
+    Admin.jsx         agenda, pedidos, grilla, sala y alumnos
     ui.jsx            modal, avatar, chip, stat, campo, barra, vacío, aviso, confirmar
-  App.jsx          sesión, navegación y modal de clase
-  styles.css       todo el diseño (rosa empolvado / crema / tinta malva, responsive)
+  App.jsx          elige entre web, acceso y panel; ventana de clase
+  styles.css       todo el diseño (negro / cemento / amarillo, responsive)
 scripts/
   pruebas.mjs      las reglas de reserva, espera, cierres y avisos
   react-stub.js    React mínimo para correr el hook en Node
   test.mjs         empaqueta y corre las pruebas (npm test)
-  iconos.mjs       genera el favicon, los PNG y el manifest (npm run iconos)
+  marca.py         logos, fotos, iconos y manifest desde Assets/ (npm run marca)
 public/
-  icono.svg · icono-192.png · icono-512.png · apple-touch-icon.png
+  marca/ · fotos/ · favicon.png · icono-192.png · icono-512.png · apple-touch-icon.png
   manifest.webmanifest
 ```
 
@@ -182,26 +152,23 @@ Si tu sala es de otra forma (7 y 8 como el plano original, o una sola fila), cam
 `DISPOSICION` y `camillas` y el plano se redibuja solo. El reformer es un SVG en
 `PlanoSala.jsx` que toma el color de su estado, así que no hay imágenes que mantener.
 
-### Paleta
+### Identidad
 
-Toda la paleta sale de los tokens de `:root` en `styles.css`, así que para recolorear el
-studio entero alcanza con tocar esas lineas:
+Negro, blanco, gris cemento y el amarillo del rayo del logo. Los títulos van en Archivo
+ancha y pesada, en mayúsculas; el texto, en Inter. Los colores salen de `:root` en
+`styles.css`:
 
 | token | valor | para qué |
 | --- | --- | --- |
-| `--rosa` | `#e7b9be` | acento principal: botones, estados activos, camilla elegida |
-| `--rosa-osc` | `#d6a2a9` | hover del botón primario, bordes y barras de progreso |
-| `--rosa-prof` | `#8e5a63` | rosa legible: eyebrows, chips y textos chicos sobre claro |
-| `--rosa-tinta` | `#6a4850` | texto cuando apoya sobre un relleno rosa pleno |
-| `--rosa-suave` | `#fbeff1` | franjas y tarjetas rosas (manifiesto, "por qué nosotros") |
-| `--tinta` | `#4c3f46` | el "negro" de la marca: un plomo cálido de fondo malva |
-| `--tinta-media` | `#5e4f57` | superficies oscuras suaves: pie, paquete destacado, CTA |
-| `--sala` | `#645660` | las paredes del plano de la sala |
-| `--hueso` | `#faf6f5` | fondo general, crema rosada |
-| `--salvia` / `--arcilla` | `#5d7b68` / `#a8625a` | ok y alerta, también rebajados |
-
-No hay negro ni blanco puros fuera de `--blanco`: los velos sobre fotos y las sombras
-están teñidos con el malva de `--tinta` para que nada corte.
+| `--amarillo` | `#fabf00` | acento: botones, estados activos, camilla elegida |
+| `--amarillo-osc` | `#dca600` | hover, bordes y barras de progreso |
+| `--amarillo-prof` | `#7d5c00` | texto de acento sobre fondo claro |
+| `--amarillo-tinta` | `#2e2400` | texto sobre relleno amarillo |
+| `--amarillo-suave` | `#fff5d1` | tarjetas y franjas claras |
+| `--tinta` / `--tinta-media` | `#0b0b0a` / `#181713` | negro de marca y superficies oscuras |
+| `--sala` | `#24231f` | el plano de la sala |
+| `--hueso` | `#f6f5f2` | fondo general |
+| `--salvia` / `--arcilla` | `#3f7550` / `#b2412f` | ok y alerta |
 
 ---
 
@@ -227,7 +194,7 @@ Las que hacen que los números cierren, todas verificadas en `npm test`:
 
 ```bash
 npm test            # las reglas de arriba, contra la lógica de verdad
-npm run iconos      # regenera el favicon y los iconos de pantalla de inicio
+npm run marca       # regenera logos, fotos e iconos desde Assets/
 ```
 
 `useStudio` es un hook, así que para probarlo fuera del navegador
@@ -235,16 +202,11 @@ npm run iconos      # regenera el favicon y los iconos de pantalla de inicio
 `scripts/react-stub.js`: un React mínimo que guarda el estado y vuelve a correr el
 hook hasta que se estabiliza. Se prueba el código real, no una copia de la lógica.
 
-`scripts/iconos.mjs` dibuja el monograma C40 con formas y escribe
-`public/icono.svg`, los PNG y el `manifest.webmanifest`, todo desde la misma
-geometría. Si cambia la paleta, se cambian los dos colores de arriba del script y se
-vuelve a correr.
-
 ---
 
 ## Para pasarlo a producción
 
-Todo vive en `localStorage` bajo la clave `pilates-studio-v3`. La forma de los datos ya es
+Todo vive en `localStorage` bajo la clave `pilates-studio-v4`. La forma de los datos ya es
 la de una base real:
 
 ```js

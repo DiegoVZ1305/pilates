@@ -63,7 +63,7 @@ function Hoy({ studio, dias, onAbrirClase, onAviso }) {
       </select>
 
       <div className="stats">
-        <Stat valor={m.anotados} label="alumnos anotados" tono="rosa" />
+        <Stat valor={m.anotados} label="alumnos anotados" tono="acento" />
         <Stat valor={`${m.ocupacion}%`} label="ocupación" />
         <Stat valor={m.llenas} label="clases completas" />
         <Stat valor={m.enEspera} label="en lista de espera" />
@@ -300,7 +300,7 @@ function Alumnos({ studio }) {
   return (
     <>
       <div className="stats stats--2">
-        <Stat valor={studio.alumnos.length} label="alumnos registrados" tono="rosa" />
+        <Stat valor={studio.alumnos.length} label="alumnos registrados" tono="acento" />
         <Stat valor={ranking[0]?.nombre.split(' ')[0] ?? '—'} label="docente más pedido" />
       </div>
 
@@ -319,7 +319,7 @@ function Alumnos({ studio }) {
                 <p className="tenue">{u.email} · {u.telefono}</p>
                 {u.notas && <p className="alumno__nota">⚠ {u.notas}</p>}
               </div>
-              <Chip>{PLANES[u.plan.id].nombre}</Chip>
+              <Chip>{PLANES[u.plan.id]?.nombre ?? 'Sin paquete'}</Chip>
               <Chip tono={u.plan.clasesRestantes === 0 ? 'alerta' : 'ok'}>
                 {u.plan.clasesRestantes} restantes
               </Chip>
@@ -408,9 +408,47 @@ function Cierres({ studio, dias, onAviso }) {
   )
 }
 
+// ---- Pedidos de paquetes --------------------------------------------------
+function Pedidos({ studio, onAviso }) {
+  const pedidos = studio.alumnos.filter((u) => u.solicitud)
+
+  if (pedidos.length === 0) {
+    return <Vacio icono="○" titulo="No hay pedidos pendientes"
+                  texto="Cuando alguien pida un paquete aparece acá para que lo actives." />
+  }
+
+  const resolver = (u, activar) => {
+    studio.resolverSolicitud(u.id, activar)
+    onAviso({
+      tipo: 'ok',
+      texto: activar ? `Paquete de ${u.nombre} activado.` : `Pedido de ${u.nombre} rechazado.`,
+    })
+  }
+
+  return (
+    <ul className="alumnos">
+      {pedidos.map((u) => (
+        <li key={u.id} className="alumno">
+          <Avatar nombre={u.nombre} tamano="sm" tono="gris" />
+          <div className="alumno__datos">
+            <p>{u.nombre} · <strong>{PLANES[u.solicitud].nombre}</strong></p>
+            <p className="tenue">{u.email} · {u.telefono}</p>
+          </div>
+          <button className="btn btn--primario btn--chico" onClick={() => resolver(u, true)}>
+            Activar (ya pagó)
+          </button>
+          <Confirmar chico etiqueta="Rechazar" confirmacion="Sí, rechazar"
+                     onConfirmar={() => resolver(u, false)} />
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 // ---- Panel ---------------------------------------------------------------
 export default function Admin({ studio, dias, onAbrirClase, onAviso }) {
   const [tab, setTab] = useState('hoy')
+  const pendientes = studio.alumnos.filter((u) => u.solicitud).length
 
   return (
     <section>
@@ -424,7 +462,8 @@ export default function Admin({ studio, dias, onAbrirClase, onAviso }) {
       <Segmentado
         valor={tab}
         onCambio={setTab}
-        opciones={[['hoy', 'Agenda'], ['clases', 'Grilla'], ['cierres', 'Cierres'],
+        opciones={[['hoy', 'Agenda'], ['pedidos', pendientes ? `Pedidos (${pendientes})` : 'Pedidos'],
+                 ['clases', 'Grilla'], ['cierres', 'Cierres'],
                  ['sala', 'Sala'], ['alumnos', 'Alumnos']]}
       />
 
@@ -433,6 +472,7 @@ export default function Admin({ studio, dias, onAbrirClase, onAviso }) {
       {tab === 'cierres' && <Cierres studio={studio} dias={dias} onAviso={onAviso} />}
       {tab === 'sala' && <Sala studio={studio} />}
       {tab === 'alumnos' && <Alumnos studio={studio} />}
+      {tab === 'pedidos' && <Pedidos studio={studio} onAviso={onAviso} />}
     </section>
   )
 }

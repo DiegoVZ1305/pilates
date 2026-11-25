@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { iniciales } from '../lib/config'
 
 /**
@@ -33,22 +33,43 @@ export function Confirmar({ etiqueta, confirmacion = 'Sí, dale', aviso, onConfi
 
 /** Hoja modal: panel centrado en desktop, hoja desde abajo en celular. */
 export function Modal({ titulo, subtitulo, children, onCerrar, acciones, tamano = 'md' }) {
+  const hoja = useRef(null)
+  const idTitulo = useId()
+  // onCerrar cambia en cada render; con la ref el efecto corre una sola vez y
+  // no le roba el foco a quien está usando la ventana.
+  const cerrar = useRef(onCerrar)
+  cerrar.current = onCerrar
+
   useEffect(() => {
-    const esc = (e) => e.key === 'Escape' && onCerrar()
-    window.addEventListener('keydown', esc)
+    const antes = document.activeElement
+    hoja.current.focus()
+    const teclas = (e) => {
+      if (e.key === 'Escape') return cerrar.current()
+      if (e.key !== 'Tab') return
+      // El Tab da la vuelta dentro de la ventana.
+      const f = [...hoja.current.querySelectorAll(
+        'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled)')]
+      const i = f.indexOf(document.activeElement)
+      if (f.length === 0 || (i !== -1 && i !== (e.shiftKey ? 0 : f.length - 1))) return
+      e.preventDefault()
+      f[e.shiftKey ? f.length - 1 : 0].focus()
+    }
+    window.addEventListener('keydown', teclas)
     document.body.style.overflow = 'hidden'
     return () => {
-      window.removeEventListener('keydown', esc)
+      window.removeEventListener('keydown', teclas)
       document.body.style.overflow = ''
+      if (antes?.isConnected) antes.focus()
     }
-  }, [onCerrar])
+  }, [])
 
   return (
     <div className="overlay" onClick={onCerrar}>
-      <div className={'hoja hoja--' + tamano} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+      <div ref={hoja} tabIndex={-1} className={'hoja hoja--' + tamano} role="dialog" aria-modal="true"
+           aria-labelledby={idTitulo} onClick={(e) => e.stopPropagation()}>
         <header className="hoja__head">
           <div className="hoja__tit">
-            <h3>{titulo}</h3>
+            <h3 id={idTitulo}>{titulo}</h3>
             {subtitulo && <p>{subtitulo}</p>}
           </div>
           <button className="iconbtn" onClick={onCerrar} aria-label="Cerrar">✕</button>
@@ -60,7 +81,7 @@ export function Modal({ titulo, subtitulo, children, onCerrar, acciones, tamano 
   )
 }
 
-export function Avatar({ nombre, tamano = 'md', tono = 'rosa' }) {
+export function Avatar({ nombre, tamano = 'md', tono = 'acento' }) {
   return (
     <span className={`avatar avatar--${tamano} avatar--${tono}`} aria-hidden="true">
       {iniciales(nombre)}
@@ -90,7 +111,7 @@ export function Campo({ etiqueta, ayuda, error, children }) {
   )
 }
 
-export const Barra = ({ valor, max, tono = 'rosa' }) => (
+export const Barra = ({ valor, max, tono = 'acento' }) => (
   <div className="barraprog" role="progressbar" aria-valuenow={valor} aria-valuemax={max}>
     <span className={'barraprog__fill barraprog__fill--' + tono}
           style={{ width: Math.min(100, (valor / (max || 1)) * 100) + '%' }} />
@@ -106,9 +127,13 @@ export const Vacio = ({ icono = '○', titulo, texto, accion }) => (
   </div>
 )
 
+/** La región queda siempre montada para que el lector de pantalla anuncie lo nuevo. */
 export function Aviso({ aviso }) {
-  if (!aviso) return null
-  return <div className={'aviso aviso--' + aviso.tipo}>{aviso.texto}</div>
+  return (
+    <div role="status">
+      {aviso && <div className={'aviso aviso--' + aviso.tipo}>{aviso.texto}</div>}
+    </div>
+  )
 }
 
 export function Segmentado({ opciones, valor, onCambio, className = '' }) {

@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { PLANES, STUDIO } from '../lib/config'
+import { LOGOS, STUDIO } from '../lib/config'
 import { Campo } from './ui'
 
-const VACIO = { nombre: '', email: '', telefono: '', pin: '', pin2: '', plan: 'ocho' }
+const VACIO = { nombre: '', email: '', telefono: '', pin: '', pin2: '' }
 
 export default function Auth({ studio, onAviso, onVolver }) {
   const [modo, setModo] = useState('entrar')
@@ -49,8 +49,7 @@ export default function Auth({ studio, onAviso, onVolver }) {
         {onVolver && (
           <button className="auth__volver" onClick={onVolver}>← Volver al sitio</button>
         )}
-        <span className="marca__logo marca__logo--lg">{STUDIO.sigla}</span>
-        <h1>{STUDIO.nombre}</h1>
+        <h1><img src={LOGOS.completoBlanco} alt={`${STUDIO.nombre} · Modern Pilates`} /></h1>
         <p>Reservá tu camilla, elegí dónde ubicarte y seguí tus clases.</p>
         <ul className="auth__puntos">
           <li>{STUDIO.camillas} reformers por clase</li>
@@ -114,7 +113,7 @@ export default function Auth({ studio, onAviso, onVolver }) {
           </form>
         ) : (
           <form onSubmit={crear} className="auth__form">
-            <p className="auth__paso">Paso 2 de 2 · Acceso y plan</p>
+            <p className="auth__paso">Paso 2 de 2 · Tu acceso</p>
             <div className="grid2">
               <Campo etiqueta="Elegí un PIN">
                 <input type="password" inputMode="numeric" maxLength={4} value={form.pin}
@@ -124,18 +123,6 @@ export default function Auth({ studio, onAviso, onVolver }) {
                 <input type="password" inputMode="numeric" maxLength={4} value={form.pin2}
                        onChange={set('pin2')} required />
               </Campo>
-            </div>
-
-            <p className="campo__lbl">Plan</p>
-            <div className="planes">
-              {Object.entries(PLANES).map(([id, p]) => (
-                <button key={id} type="button"
-                        className={'planop' + (form.plan === id ? ' es-activo' : '')}
-                        onClick={() => setForm({ ...form, plan: id })}>
-                  <strong>{p.nombre}</strong>
-                  <span>{p.detalle}</span>
-                </button>
-              ))}
             </div>
 
             <div className="auth__botones">

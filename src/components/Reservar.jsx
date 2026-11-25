@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { DOCENTES, TIPOS } from '../lib/config'
 import { etiquetaDia, etiquetaSemana, rangoSemana, semanasDe } from '../lib/fechas'
-import { Avatar, Chip, Vacio } from './ui'
+import { Avatar, Chip } from './ui'
 
 /** Mini plano: una marca por camilla con su estado. */
 function Cupos({ plano }) {
@@ -18,11 +18,21 @@ function Cupos({ plano }) {
   )
 }
 
-/** El día se parte en mañana y tarde para que la lista se lea de un saque. */
-const FRANJAS = [
-  ['Mañana', (hora) => Number(hora.slice(0, 2)) < 13],
-  ['Tarde', (hora) => Number(hora.slice(0, 2)) >= 13],
-]
+/** Un paso de la reserva: recién aparece cuando el anterior está resuelto. */
+function Paso({ numero, titulo, children }) {
+  const ref = useRef(null)
+  // El paso nuevo se acerca solo si quedó fuera de la pantalla.
+  useEffect(() => {
+    const suave = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ref.current.scrollIntoView({ block: 'nearest', behavior: suave ? 'smooth' : 'auto' })
+  }, [])
+  return (
+    <section className="paso" ref={ref}>
+      <h3 className="paso__tit"><span>{numero}</span>{titulo}</h3>
+      {children}
+    </section>
+  )
+}
 
 /** Una clase de la grilla, como fila de la lista del día. */
 function FilaClase({ clase: c, onAbrir, esFavorita }) {
@@ -93,9 +103,12 @@ function FilaClase({ clase: c, onAbrir, esFavorita }) {
 }
 
 export default function Reservar({ studio, dias, diaSel, setDiaSel, onAbrirClase }) {
-  const [filtroDocente, setFiltroDocente] = useState('')
-  const [filtroTipo, setFiltroTipo] = useState('')
-  const [soloLibres, setSoloLibres] = useState(false)
+  // La reserva va en orden: día → clase → profe → horario y camilla.
+  const [diaElegido, setDiaElegido] = useState(false)
+  const [tipo, setTipo] = useState(null)
+  const [profe, setProfe] = useState(null)     // '' = cualquiera
+
+  const elegirDia = (iso) => { setDiaSel(iso); setDiaElegido(true); setTipo(null); setProfe(null) }
 
   const semanas = useMemo(() => semanasDe(dias), [dias])
   // La semana visible es siempre la del día elegido: así no hay dos estados
@@ -105,12 +118,16 @@ export default function Reservar({ studio, dias, diaSel, setDiaSel, onAbrirClase
 
   const abierto = (d) => d.reservable && studio.horariosDeFecha(d.iso).length > 0
 
-  /** Mueve la vista a otra semana parando en su primer día con clases. */
+  /** Mueve la vista a otra semana; el día lo vuelve a elegir el alumno. */
   const irASemana = (i) => {
     const s = semanas[i]
     if (!s) return
     const dest = s.find(abierto) ?? s.find((d) => d.reservable)
-    if (dest) setDiaSel(dest.iso)
+    if (!dest) return
+    setDiaSel(dest.iso)
+    setDiaElegido(false)
+    setTipo(null)
+    setProfe(null)
   }
 
   // Ocupación de cada día de la semana, para que se vea dónde queda lugar.
@@ -132,39 +149,21 @@ export default function Reservar({ studio, dias, diaSel, setDiaSel, onAbrirClase
   )
 
   const dia = dias.find((d) => d.iso === diaSel)
-  const todas = studio.clasesDeDia(diaSel)
-  const metricas = resumen[diaSel]
 
-  // La profe favorita se marca con estrella y aparece primera entre los
-  // filtros. No se filtra sola: el orden por hora es lo que importa al elegir.
+  // La profe favorita se marca con estrella y aparece primera.
   const profeFavorita = studio.usuario?.preferencias?.docenteFavorito ?? null
   const docentesOrdenados = useMemo(() => (profeFavorita
     ? [...DOCENTES].sort((a, b) => (b.id === profeFavorita) - (a.id === profeFavorita))
     : DOCENTES), [profeFavorita])
 
-  const clases = useMemo(() => todas.filter((c) =>
-    (!filtroDocente || c.docente.id === filtroDocente) &&
-    (!filtroTipo || c.tipoId === filtroTipo) &&
-    (!soloLibres || c.libres > 0)
-  ), [todas, filtroDocente, filtroTipo, soloLibres])
-
-  const hayFiltros = filtroDocente || filtroTipo || soloLibres
-  const limpiar = () => { setFiltroDocente(''); setFiltroTipo(''); setSoloLibres(false) }
-
-  // Profes y tipos que realmente dan clase este día: filtrar por algo que no
-  // está en la grilla del día solo deja la lista vacía.
-  const profesDelDia = new Set(todas.map((c) => c.docente.id))
-  const tiposDelDia = new Set(todas.map((c) => c.tipoId))
-
-  // Si el studio no abre, ofrecemos el próximo día que sí tiene clases.
-  const proximoAbierto = dias.find((d) => d.iso > diaSel && studio.horariosDeFecha(d.iso).length > 0)
-
-  const franjas = FRANJAS
-    .map(([titulo, entra]) => [titulo, clases.filter((c) => entra(c.hora))])
-    .filter(([, lista]) => lista.length > 0)
+  // Cada paso ofrece sólo lo que de verdad queda, según lo ya elegido.
+  const porDar = studio.clasesDeDia(diaSel).filter((c) => !c.pasado)
+  const delTipo = porDar.filter((c) => c.tipoId === tipo)
+  const horarios = delTipo.filter((c) => !profe || c.docente.id === profe)
 
   return (
     <>
+      <h3 className="paso__tit"><span>1</span>Elegí el día</h3>
       <section className="semana">
         <header className="semana__cab">
           <button
@@ -197,12 +196,12 @@ export default function Reservar({ studio, dias, diaSel, setDiaSel, onAbrirClase
               <button
                 key={d.iso}
                 disabled={cerrado}
-                aria-current={d.iso === diaSel ? 'date' : undefined}
+                aria-pressed={diaElegido && d.iso === diaSel}
                 className={'dia'
-                  + (d.iso === diaSel ? ' es-activo' : '')
+                  + (diaElegido && d.iso === diaSel ? ' es-activo' : '')
                   + (d.esHoy ? ' es-hoy' : '')
                   + (cerrado ? ' es-cerrado' : '')}
-                onClick={() => setDiaSel(d.iso)}
+                onClick={() => elegirDia(d.iso)}
               >
                 <span className="dia__nombre">{d.nombreCorto}</span>
                 <span className="dia__num">{d.numero}</span>
@@ -223,101 +222,63 @@ export default function Reservar({ studio, dias, diaSel, setDiaSel, onAbrirClase
         </div>
       </section>
 
-      <div className="filtro">
-        <span className="filtro__lbl">Clase</span>
-        <div className="filtro__ops">
-          <button className={'pill' + (!filtroTipo ? ' es-activo' : '')}
-                  onClick={() => setFiltroTipo('')}>
-            Todas
-          </button>
-          {Object.entries(TIPOS).map(([id, t]) => (
-            <button
-              key={id}
-              disabled={!tiposDelDia.has(id) && filtroTipo !== id}
-              className={'pill' + (filtroTipo === id ? ' es-activo' : '')}
-              onClick={() => setFiltroTipo(filtroTipo === id ? '' : id)}
-            >
-              {t.nombre}
-            </button>
-          ))}
-        </div>
-      </div>
+      {diaElegido && porDar.length === 0 && (
+        <p className="nota nota--alerta">
+          {etiquetaDia(dia)} ya no quedan clases. Elegí otro día.
+        </p>
+      )}
 
-      <div className="filtro">
-        <span className="filtro__lbl">Profe</span>
-        <div className="filtro__ops">
-          <button className={'pill' + (!filtroDocente ? ' es-activo' : '')}
-                  onClick={() => setFiltroDocente('')}>
-            Todas
-          </button>
-          {docentesOrdenados.map((d) => (
-            <button
-              key={d.id}
-              disabled={!profesDelDia.has(d.id) && filtroDocente !== d.id}
-              className={'pill pill--profe' + (filtroDocente === d.id ? ' es-activo' : '')}
-              onClick={() => setFiltroDocente(filtroDocente === d.id ? '' : d.id)}
-            >
-              <Avatar nombre={d.nombre} tamano="sm" tono="gris" />
-              {d.nombre.split(' ')[0]}
-              {d.id === profeFavorita && <span className="estrella"> ★</span>}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="barra">
-        <h2>{etiquetaDia(dia)}</h2>
-        <div className="barra__meta">
-          {metricas && !metricas.cerrado && (
-            <span className="tenue">
-              {clases.length} de {todas.length} clase{todas.length === 1 ? '' : 's'}
-              {' · '}{metricas.capacidad - metricas.anotados} lugares libres
-            </span>
-          )}
-          <label className="check">
-            <input type="checkbox" checked={soloLibres}
-                   onChange={(e) => setSoloLibres(e.target.checked)} />
-            Solo con lugar
-          </label>
-          {hayFiltros && (
-            <button className="btn btn--fantasma btn--chico" onClick={limpiar}>Limpiar</button>
-          )}
-        </div>
-      </div>
-
-      {clases.length === 0 ? (
-        <Vacio
-          icono="◠"
-          titulo={todas.length === 0
-            ? (studio.estaCerrado(diaSel) ? 'El studio cierra este día' : 'El studio no abre este día')
-            : 'Ninguna clase coincide'}
-          texto={todas.length === 0
-            ? 'Elegí otro día de la semana para ver la grilla.'
-            : 'Probá sin filtros: este día hay clases, pero no con lo que elegiste.'}
-          accion={todas.length === 0
-            ? proximoAbierto && (
-                <button className="btn btn--primario" onClick={() => setDiaSel(proximoAbierto.iso)}>
-                  Ver el {proximoAbierto.nombreLargo.toLowerCase()} {proximoAbierto.numero}
+      {diaElegido && porDar.length > 0 && (
+        <Paso key={'tipo' + diaSel} numero="2" titulo={`Tipo de clase · ${etiquetaDia(dia)}`}>
+          <div className="paso__ops">
+            {Object.entries(TIPOS)
+              .filter(([id]) => porDar.some((c) => c.tipoId === id))
+              .map(([id, t]) => (
+                <button key={id} className={'pill' + (tipo === id ? ' es-activo' : '')}
+                        aria-pressed={tipo === id}
+                        onClick={() => { setTipo(id); setProfe(null) }}>
+                  {t.nombre}
                 </button>
-              )
-            : <button className="btn btn--primario" onClick={limpiar}>Quitar los filtros</button>}
-        />
-      ) : (
-        franjas.map(([titulo, lista]) => (
-          <section className="franja" key={titulo}>
-            <p className="franja__tit">{titulo} <span>{lista.length}</span></p>
-            <ul className="clases">
-              {lista.map((c) => (
-                <FilaClase
-                  key={c.hora}
-                  clase={c}
-                  esFavorita={c.docente.id === profeFavorita}
-                  onAbrir={() => onAbrirClase(c)}
-                />
               ))}
-            </ul>
-          </section>
-        ))
+          </div>
+        </Paso>
+      )}
+
+      {diaElegido && delTipo.length > 0 && (
+        <Paso key={'profe' + diaSel + tipo} numero="3" titulo="Profe">
+          <div className="paso__ops">
+            <button className={'pill' + (profe === '' ? ' es-activo' : '')}
+                    aria-pressed={profe === ''} onClick={() => setProfe('')}>
+              Cualquiera
+            </button>
+            {docentesOrdenados
+              .filter((d) => delTipo.some((c) => c.docente.id === d.id))
+              .map((d) => (
+                <button key={d.id}
+                        className={'pill pill--profe' + (profe === d.id ? ' es-activo' : '')}
+                        aria-pressed={profe === d.id} onClick={() => setProfe(d.id)}>
+                  <Avatar nombre={d.nombre} tamano="sm" tono="gris" />
+                  {d.nombre.split(' ')[0]}
+                  {d.id === profeFavorita && <span className="estrella"> ★</span>}
+                </button>
+              ))}
+          </div>
+        </Paso>
+      )}
+
+      {diaElegido && delTipo.length > 0 && profe !== null && (
+        <Paso key={'hora' + diaSel + tipo} numero="4" titulo="Elegí la hora y tu camilla">
+          <ul className="clases">
+            {horarios.map((c) => (
+              <FilaClase
+                key={c.hora}
+                clase={c}
+                esFavorita={c.docente.id === profeFavorita}
+                onAbrir={() => onAbrirClase(c)}
+              />
+            ))}
+          </ul>
+        </Paso>
       )}
     </>
   )

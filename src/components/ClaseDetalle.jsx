@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { cuandoEs, diaSemanaDe, etiquetaLarga } from '../lib/fechas'
+import { cuandoEs, etiquetaLarga } from '../lib/fechas'
 import { avisoCancelar, resultadoCancelar } from '../lib/mensajes'
 import PlanoSala from './PlanoSala'
 import { Avatar, Chip, Confirmar, Modal } from './ui'
@@ -8,13 +8,12 @@ import { Avatar, Chip, Confirmar, Modal } from './ui'
 export default function ClaseDetalle({ clase, studio, onCerrar, onAviso }) {
   const { usuario } = studio
   const favorita = usuario?.preferencias?.camillaFavorita ?? null
-  const diaSemana = diaSemanaDe(clase.fecha)
-  const guardada = studio.estaGuardada(diaSemana, clase.hora)
+  const soloVer = studio.esAdmin   // las altas del studio van desde la agenda
 
   // Si se puede reservar y la camilla favorita está libre, ya viene elegida:
   // la reserva de siempre queda a un solo toque.
   const [seleccion, setSeleccion] = useState(() => {
-    if (clase.pasado || clase.miCamilla || clase.enEspera || !favorita) return null
+    if (soloVer || clase.pasado || clase.miCamilla || clase.enEspera || !favorita) return null
     return clase.plano.some((c) => c.numero === favorita && c.libre) ? favorita : null
   })
 
@@ -46,7 +45,7 @@ export default function ClaseDetalle({ clase, studio, onCerrar, onAviso }) {
     onAviso(resultadoCancelar(r))
   }
 
-  const acciones = clase.pasado ? (
+  const acciones = soloVer || clase.pasado ? (
     <button className="btn btn--fantasma" onClick={cerrar}>Cerrar</button>
   ) : clase.miCamilla ? (
     <>
@@ -112,18 +111,11 @@ export default function ClaseDetalle({ clase, studio, onCerrar, onAviso }) {
             <Chip>{studio.fueraDeServicio.length} en mantenimiento</Chip>
           )}
         </div>
-
-        <button
-          className={'guardar' + (guardada ? ' es-activo' : '')}
-          onClick={() => studio.alternarGuardada(diaSemana, clase.hora)}
-          title="Guardar este horario como favorito"
-        >
-          {guardada ? '★ Guardada' : '☆ Guardar'}
-        </button>
       </div>
 
       <p className="plano__ayuda">
         {clase.pasado ? 'Así quedó la sala en esta clase.'
+          : soloVer ? 'Así está la sala. Para anotar a alguien, usá la agenda.'
           : clase.miCamilla ? `Tu lugar es la camilla ${clase.miCamilla}. Tocá una libre para moverte.`
           : clase.enEspera ? 'Estás en la lista de espera de esta clase.'
           : clase.libres === 0 ? 'No quedan camillas libres.'
@@ -134,7 +126,7 @@ export default function ClaseDetalle({ clase, studio, onCerrar, onAviso }) {
         clase={clase}
         seleccion={seleccion}
         onSeleccionar={setSeleccion}
-        soloLectura={clase.pasado || clase.enEspera || clase.libres === 0}
+        soloLectura={soloVer || clase.pasado || clase.enEspera || clase.libres === 0}
         favorita={favorita}
         mostrarNombres={studio.esAdmin}
       />

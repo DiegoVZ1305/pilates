@@ -1,18 +1,13 @@
 {
   "name": "Core 40",
   "short_name": "C40",
-  "description": "Reservá tu clase de pilates reformer y elegí tu camilla.",
+  "description": "Reserv\u00e1 tu clase de pilates reformer y eleg\u00ed tu camilla.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#faf6f5",
-  "theme_color": "#faf6f5",
+  "background_color": "#f6f5f2",
+  "theme_color": "#0b0b0a",
   "lang": "es",
   "icons": [
-    {
-      "src": "/icono.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
-    },
     {
       "src": "/icono-192.png",
       "sizes": "192x192",

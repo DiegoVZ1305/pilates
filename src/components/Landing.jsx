@@ -1,23 +1,41 @@
-import { useEffect, useState } from 'react'
-import { DISPOSICION, DOCENTES, FOTOS, PLANES, SITIO, STUDIO, TIPOS } from '../lib/config'
+import { useEffect, useRef, useState } from 'react'
+import { DISPOSICION, DOCENTES, FOTOS, LOGOS, PLANES, RESENAS, SITIO, STUDIO, TIPOS } from '../lib/config'
 import { etiquetaDia, proximosDias } from '../lib/fechas'
 import { Avatar } from './ui'
 
+function Foto({ nombre, etiqueta, className = '', diferida = true }) {
+  return <img className={'foto ' + className} src={FOTOS[nombre]} alt={etiqueta}
+              loading={diferida ? 'lazy' : 'eager'} />
+}
+
+const SECCIONES = [
+  ['clases', 'Clases'], ['nosotros', 'Nosotros'], ['coaches', 'Coaches'],
+  ['paquetes', 'Paquetes'], ['horarios', 'Horarios'],
+]
+
 /**
- * Foto del sitio. Mientras no haya archivo cargado en config.FOTOS
- * se dibuja un bloque gráfico en su lugar, para que la página se vea
- * terminada sin depender de imágenes.
+ * Los cuatro rayos del neón. Se apagan sólo si el script corre, así que sin él
+ * se ven encendidos; se prenden una vez, cuando entran en pantalla.
  */
-function Foto({ nombre, etiqueta, className = '', fondo }) {
-  const src = FOTOS[nombre]
-  if (src) return <img className={'foto ' + className} src={src} alt={etiqueta} loading="lazy" />
-  // Sin archivo cargado: bloque gráfico. Si va de fondo, la etiqueta se corre
-  // a una esquina para no competir con el texto que lleva encima.
+function Rayos() {
+  const ref = useRef(null)
+  const [estado, setEstado] = useState('')
+  useEffect(() => {
+    const el = ref.current
+    // Si ya quedó arriba de la vista (deep link), no hay nada que encender.
+    if (!window.IntersectionObserver || el.getBoundingClientRect().bottom < 0) return
+    setEstado(' es-apagado')
+    const obs = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return
+      setEstado(' es-encendido')
+      obs.disconnect()
+    }, { threshold: 1, rootMargin: '0px 0px -15% 0px' })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
   return (
-    <div className={'foto foto--vacia ' + (fondo ? 'foto--fondo ' : '') + className}
-         role="img" aria-label={etiqueta}>
-      {!fondo && <span className="foto__marca">{STUDIO.sigla}</span>}
-      <span className="foto__txt">{etiqueta}</span>
+    <div ref={ref} className={'frase__rayos' + estado} aria-hidden="true">
+      {[1, 2, 3, 4].map((n) => <span className="rayo" key={n} />)}
     </div>
   )
 }
@@ -42,10 +60,34 @@ function SalaMini() {
   )
 }
 
-export default function Landing({ studio, onEntrar }) {
+export default function Landing({ studio, onEntrar, cuenta }) {
+  // `cuenta` llega sólo con sesión de alumno: las reservas se hacen acá mismo.
+  const alumno = cuenta ? studio.usuario : null
   const dias = proximosDias().slice(0, 7).filter((d) => studio.horariosDeFecha(d.iso).length > 0)
   const [diaSel, setDiaSel] = useState(dias[0]?.iso)
   const clases = diaSel ? studio.clasesDeDia(diaSel) : []
+
+  const [bajo, setBajo] = useState(false)
+  useEffect(() => {
+    const mirar = () => setBajo(window.scrollY > 10)
+    mirar()
+    window.addEventListener('scroll', mirar, { passive: true })
+    return () => window.removeEventListener('scroll', mirar)
+  }, [])
+
+  // Menú de secciones para pantallas angostas.
+  const [menu, setMenu] = useState(false)
+  const botonMenu = useRef(null)
+  useEffect(() => {
+    if (!menu) return
+    const esc = (e) => {
+      if (e.key !== 'Escape') return
+      setMenu(false)
+      botonMenu.current?.focus()
+    }
+    window.addEventListener('keydown', esc)
+    return () => window.removeEventListener('keydown', esc)
+  }, [menu])
 
   // Deep link: si alguien entra con /#horarios, vamos directo a esa sección.
   // Lo repetimos al terminar de cargar, porque las tipografías y las fotos
@@ -61,40 +103,50 @@ export default function Landing({ studio, onEntrar }) {
 
   const ir = (id) => (e) => {
     e.preventDefault()
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+    setMenu(false)
+    const suave = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    document.getElementById(id)?.scrollIntoView({ behavior: suave ? 'smooth' : 'auto' })
   }
+
+  const reservar = alumno ? ir('horarios') : onEntrar
 
   return (
     <div className="sitio">
       {/* ---- barra ---- */}
-      <header className="sitio__top">
+      <header className={'sitio__top' + (bajo || menu ? ' es-solida' : '')}>
         <a className="sitio__marca" href="#inicio" onClick={ir('inicio')}>
-          <span className="marca__logo">{STUDIO.sigla}</span>
-          <span>{STUDIO.nombre}</span>
+          <img src={LOGOS.palabraBlanca} alt={STUDIO.nombre} />
         </a>
-        <nav className="sitio__nav">
-          <a href="#clases" onClick={ir('clases')}>Clases</a>
-          <a href="#nosotros" onClick={ir('nosotros')}>Nosotros</a>
-          <a href="#coaches" onClick={ir('coaches')}>Coaches</a>
-          <a href="#paquetes" onClick={ir('paquetes')}>Paquetes</a>
-          <a href="#horarios" onClick={ir('horarios')}>Horarios</a>
+        <button ref={botonMenu} type="button" className="sitio__menu"
+                aria-label={menu ? 'Cerrar menú' : 'Abrir menú'}
+                aria-expanded={menu} aria-controls="secciones"
+                onClick={() => setMenu((v) => !v)}>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d={menu ? 'M6 6l12 12M18 6L6 18' : 'M4 7h16M4 12h16M4 17h16'} />
+          </svg>
+        </button>
+        <nav id="secciones" className={'sitio__nav' + (menu ? ' es-abierto' : '')} aria-label="Secciones">
+          {SECCIONES.map(([id, txt]) => (
+            <a key={id} href={'#' + id} onClick={ir(id)}>{txt}</a>
+          ))}
         </nav>
         <div className="sitio__acciones">
-          <button className="btn btn--fantasma btn--chico" onClick={onEntrar}>Entrar</button>
-          <button className="btn btn--primario btn--chico" onClick={onEntrar}>Reservar</button>
+          <button className="btn btn--primario btn--chico" onClick={reservar}>Reservar</button>
         </div>
       </header>
 
       {/* ---- hero ---- */}
       <section className="hero" id="inicio">
-        <Foto nombre="hero" etiqueta="Foto de la sala" className="hero__fondo" fondo />
+        <Foto nombre="hero" etiqueta="La sala de reformers de Core 40" className="hero__fondo" diferida={false} />
         <div className="hero__velo" />
         <div className="hero__contenido">
           <p className="hero__eyebrow">Reformer · Mat · Funcional</p>
-          <h1 className="hero__titulo">{STUDIO.nombre}</h1>
+          <h1 className="hero__titulo">
+            <img src={LOGOS.completoBlanco} alt={`${STUDIO.nombre} · Modern Pilates`} />
+          </h1>
           <p className="hero__lema">{SITIO.lema}</p>
           <div className="hero__botones">
-            <button className="btn btn--primario btn--pill" onClick={onEntrar}>Reservar clase</button>
+            <button className="btn btn--primario btn--pill" onClick={reservar}>Reservar clase</button>
             <a className="btn btn--claro btn--pill" href="#paquetes" onClick={ir('paquetes')}>Ver paquetes</a>
           </div>
         </div>
@@ -104,8 +156,7 @@ export default function Landing({ studio, onEntrar }) {
       {/* ---- manifiesto ---- */}
       <section className="manifiesto" id="manifiesto">
         <div className="manifiesto__marca">
-          <span className="marca__logo marca__logo--lg">{STUDIO.sigla}</span>
-          <p className="manifiesto__nombre">{STUDIO.nombre}</p>
+          <img src={LOGOS.completo} alt={`${STUDIO.nombre} · Modern Pilates`} />
         </div>
         <div className="manifiesto__texto">
           <h2>Más que un estudio de pilates</h2>
@@ -125,7 +176,7 @@ export default function Landing({ studio, onEntrar }) {
       <section className="pilares" id="clases">
         {SITIO.pilares.map((p) => (
           <article className="pilar" key={p.titulo}>
-            <Foto nombre={p.foto} etiqueta={`Foto ${p.titulo.toLowerCase()}`} className="pilar__foto" fondo />
+            <Foto nombre={p.foto} etiqueta={`${p.titulo} en Core 40`} className="pilar__foto" />
             <div className="pilar__txt">
               <h3>{p.titulo}</h3>
               <p>{p.texto}</p>
@@ -164,7 +215,7 @@ export default function Landing({ studio, onEntrar }) {
               </li>
             ))}
           </ul>
-          <button className="btn btn--primario btn--pill" onClick={onEntrar}>Quiero probar</button>
+          <button className="btn btn--primario btn--pill" onClick={reservar}>Quiero probar</button>
         </div>
         <div className="nosotros__plano">
           <SalaMini />
@@ -177,9 +228,10 @@ export default function Landing({ studio, onEntrar }) {
 
       {/* ---- frase ---- */}
       <section className="frase">
-        <Foto nombre="frase" etiqueta="Foto del studio" className="frase__fondo" fondo />
-        <div className="frase__velo" />
-        <h2>{SITIO.frase}</h2>
+        <div>
+          <Rayos />
+          <h2>{SITIO.frase}</h2>
+        </div>
       </section>
 
       {/* ---- coaches ---- */}
@@ -201,6 +253,38 @@ export default function Landing({ studio, onEntrar }) {
         </div>
       </section>
 
+      {/* ---- momento ---- */}
+      <section className="momento">
+        <Foto nombre="momento"
+              etiqueta="Alumna en plancha sobre el reformer: la vida no es perfecta pero, tu plancha puede serlo" />
+      </section>
+
+      {/* ---- reseñas ---- */}
+      <section className="resenas" id="resenas">
+        <div className="seccion__cab">
+          <p className="eyebrow">Reseñas</p>
+          <h2>Lo que dicen en Google</h2>
+        </div>
+        {RESENAS.length > 0 && (
+          <div className="resenas__grid">
+            {RESENAS.map((r) => (
+              <figure className="resena" key={r.nombre + r.texto}>
+                <p className="resena__estrellas" role="img" aria-label={`${r.estrellas} de 5 estrellas`}>
+                  {'★'.repeat(r.estrellas)}{'☆'.repeat(5 - r.estrellas)}
+                </p>
+                <blockquote>{r.texto}</blockquote>
+                <figcaption>{r.nombre} · Google</figcaption>
+              </figure>
+            ))}
+          </div>
+        )}
+        <div className="resenas__cta">
+          <a className="btn btn--linea btn--pill" href={SITIO.mapa} target="_blank" rel="noreferrer">
+            Ver reseñas en Google Maps ↗
+          </a>
+        </div>
+      </section>
+
       {/* ---- paquetes ---- */}
       <section className="paquetes" id="paquetes">
         <div className="seccion__cab">
@@ -217,61 +301,75 @@ export default function Landing({ studio, onEntrar }) {
               <ul className="paquete__lista">
                 {p.incluye.map((x) => <li key={x}>{x}</li>)}
               </ul>
-              <button className={'btn btn--pill ' + (id === 'ocho' ? 'btn--primario' : 'btn--linea')}
-                      onClick={onEntrar}>
-                Empezar
-              </button>
+              {alumno?.solicitud === id ? (
+                <>
+                  <p className="paquete__pendiente">Pendiente de activación</p>
+                  <button className="btn btn--pill btn--linea" onClick={() => studio.solicitarPlan(null)}>
+                    Anular pedido
+                  </button>
+                </>
+              ) : (
+                <button className={'btn btn--pill ' + (id === 'ocho' ? 'btn--primario' : 'btn--linea')}
+                        onClick={alumno ? () => studio.solicitarPlan(id) : onEntrar}>
+                  {alumno ? 'Pedir este paquete' : 'Empezar'}
+                </button>
+              )}
             </article>
           ))}
         </div>
         <p className="paquetes__nota">
-          Precios de referencia del prototipo. El cobro todavía no está conectado.
+          Precios por confirmar. El pago se coordina con el studio ({SITIO.telefono}) y el
+          paquete se activa cuando lo confirman.
         </p>
       </section>
 
       {/* ---- horarios ---- */}
-      <section className="horarios" id="horarios">
+      <section className={'horarios' + (alumno ? ' es-cuenta' : '')} id="horarios">
         <div className="seccion__cab">
           <p className="eyebrow">Horarios</p>
-          <h2>Mirá la disponibilidad de esta semana</h2>
+          <h2>{alumno ? 'Reservá tu clase' : 'Mirá la disponibilidad de esta semana'}</h2>
         </div>
 
-        <div className="horarios__dias">
-          {dias.map((d) => (
-            <button key={d.iso}
-                    className={'horarios__dia' + (d.iso === diaSel ? ' es-activo' : '')}
-                    onClick={() => setDiaSel(d.iso)}>
-              <span>{d.esHoy ? 'Hoy' : d.nombreCorto}</span>
-              <strong>{d.numero}</strong>
-            </button>
-          ))}
-        </div>
+        {cuenta ?? (
+          <>
+            <div className="horarios__dias">
+              {dias.map((d) => (
+                <button key={d.iso}
+                        className={'horarios__dia' + (d.iso === diaSel ? ' es-activo' : '')}
+                        onClick={() => setDiaSel(d.iso)}>
+                  <span>{d.esHoy ? 'Hoy' : d.nombreCorto}</span>
+                  <strong>{d.numero}</strong>
+                </button>
+              ))}
+            </div>
 
-        <p className="horarios__fecha">{etiquetaDia(dias.find((d) => d.iso === diaSel))}</p>
+            <p className="horarios__fecha">{etiquetaDia(dias.find((d) => d.iso === diaSel))}</p>
 
-        <ul className="horarios__lista">
-          {clases.map((c) => (
-            <li key={c.hora} className={'turno' + (c.pasado ? ' es-pasado' : '')}>
-              <span className="turno__hora">{c.hora}</span>
-              <span className="turno__que">
-                <strong>{c.tipo.nombre}</strong>
-                <small>{c.docente.nombre} · {c.tipo.duracion} min</small>
-              </span>
-              <span className={'turno__cupo' + (c.libres === 0 ? ' es-lleno' : '')}>
-                {c.pasado ? 'terminada' : c.libres === 0 ? 'completa' : `${c.libres} libres`}
-              </span>
-              {c.pasado
-                ? <span className="turno__fin">—</span>
-                : <button className="btn btn--chico btn--linea" onClick={onEntrar}>
-                    {c.libres === 0 ? 'Lista de espera' : 'Reservar'}
-                  </button>}
-            </li>
-          ))}
-        </ul>
+            <ul className="horarios__lista">
+              {clases.map((c) => (
+                <li key={c.hora} className={'turno' + (c.pasado ? ' es-pasado' : '')}>
+                  <span className="turno__hora">{c.hora}</span>
+                  <span className="turno__que">
+                    <strong>{c.tipo.nombre}</strong>
+                    <small>{c.docente.nombre} · {c.tipo.duracion} min</small>
+                  </span>
+                  <span className={'turno__cupo' + (c.libres === 0 ? ' es-lleno' : '')}>
+                    {c.pasado ? 'terminada' : c.libres === 0 ? 'completa' : `${c.libres} libres`}
+                  </span>
+                  {c.pasado
+                    ? <span className="turno__fin">—</span>
+                    : <button className="btn btn--chico btn--linea" onClick={reservar}>
+                        {c.libres === 0 ? 'Lista de espera' : 'Reservar'}
+                      </button>}
+                </li>
+              ))}
+            </ul>
 
-        <div className="horarios__cta">
-          <button className="btn btn--primario btn--pill" onClick={onEntrar}>Reservar mi camilla</button>
-        </div>
+            <div className="horarios__cta">
+              <button className="btn btn--primario btn--pill" onClick={reservar}>Reservar mi camilla</button>
+            </div>
+          </>
+        )}
       </section>
 
       {/* ---- footer ---- */}
@@ -279,8 +377,7 @@ export default function Landing({ studio, onEntrar }) {
         <div className="pie__grid">
           <div>
             <div className="sitio__marca sitio__marca--pie">
-              <span className="marca__logo">{STUDIO.sigla}</span>
-              <span>{STUDIO.nombre}</span>
+              <img src={LOGOS.completoBlanco} alt={`${STUDIO.nombre} · Modern Pilates`} />
             </div>
             <p className="pie__lema">{SITIO.lema}</p>
           </div>
@@ -288,13 +385,22 @@ export default function Landing({ studio, onEntrar }) {
           <div>
             <p className="pie__tit">El studio</p>
             <p>{SITIO.direccion}</p>
+            <p>
+              <a className="pie__mapa" href={SITIO.mapa} target="_blank" rel="noreferrer">
+                Cómo llegar ↗
+              </a>
+            </p>
             <p>{SITIO.horarioAtencion}</p>
-            <p>{SITIO.telefono}</p>
+            <p><a href={`tel:${SITIO.telefono.replace(/\s/g, '')}`}>{SITIO.telefono}</a></p>
           </div>
 
           <div>
             <p className="pie__tit">Seguinos</p>
-            <p>{SITIO.instagram}</p>
+            <p>
+              <a href={`https://www.instagram.com/${SITIO.instagram}/`} target="_blank" rel="noreferrer">
+                @{SITIO.instagram}
+              </a>
+            </p>
             <p className="pie__app">
               <span>Próximamente en iOS</span>
               <span>Próximamente en Android</span>
@@ -303,8 +409,10 @@ export default function Landing({ studio, onEntrar }) {
 
           <div>
             <p className="pie__tit">Reservas</p>
-            <button className="btn btn--primario btn--pill" onClick={onEntrar}>Reservar</button>
-            <button className="btn btn--claro btn--pill" onClick={onEntrar}>Iniciar sesión</button>
+            <button className="btn btn--primario btn--pill" onClick={reservar}>Reservar</button>
+            <button className="btn btn--claro btn--pill" onClick={alumno ? studio.salir : onEntrar}>
+              {alumno ? 'Cerrar sesión' : 'Iniciar sesión'}
+            </button>
           </div>
         </div>
         <p className="pie__legal">

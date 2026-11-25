@@ -83,36 +83,46 @@ export const HORAS_POSIBLES = [
 
 // ---- Planes / abonos -----------------------------------------------------
 export const PLANES = {
-  libre:  { nombre: 'Libre',          clases: 99, detalle: 'Ilimitado',     precio: '$ 78.000',
+  libre:  { nombre: 'Libre',          clases: 99, detalle: 'Ilimitado',     precio: 'Bs xxx',
             incluye: ['Clases sin límite', 'Reservá hasta 4 turnos a la vez', 'Elegís tu camilla'] },
-  ocho:   { nombre: '8 clases / mes', clases: 8,  detalle: '2 por semana',  precio: '$ 52.000',
+  ocho:   { nombre: '8 clases / mes', clases: 8,  detalle: '2 por semana',  precio: 'Bs xxx',
             incluye: ['2 clases por semana', 'Reprogramás hasta 2 h antes', 'Elegís tu camilla'] },
-  cuatro: { nombre: '4 clases / mes', clases: 4,  detalle: '1 por semana',  precio: '$ 31.000',
+  cuatro: { nombre: '4 clases / mes', clases: 4,  detalle: '1 por semana',  precio: 'Bs xxx',
             incluye: ['1 clase por semana', 'Reprogramás hasta 2 h antes', 'Elegís tu camilla'] },
-  suelta: { nombre: 'Clase suelta',   clases: 1,  detalle: 'Sin abono',     precio: '$ 9.500',
+  suelta: { nombre: 'Clase suelta',   clases: 1,  detalle: 'Sin abono',     precio: 'Bs xxx',
             incluye: ['Una clase', 'Sin compromiso', 'Ideal para probar'] },
 }
 
 // ---- Sitio público -------------------------------------------------------
-// Dejá las fotos en public/fotos/ y poné acá la ruta (ej: '/fotos/hero.jpg').
-// Mientras estén vacías se muestra un bloque gráfico en su lugar.
+// Fotos del sitio. Salen de Assets/ con `npm run marca` (ver scripts/marca.py).
 export const FOTOS = {
-  hero: '',
-  manifiesto: '',
-  flexibilidad: '',
-  fuerza: '',
-  resistencia: '',
-  frase: '',
-  nosotros: '',
+  hero: '/fotos/sala.jpg',
+  flexibilidad: '/fotos/flexibilidad.jpg',
+  fuerza: '/fotos/fuerza.jpg',
+  resistencia: '/fotos/resistencia.jpg',
+  momento: '/fotos/plancha.jpg',
 }
+
+export const LOGOS = {
+  completo: '/marca/logo.png',               // negro, con "Modern Pilates"
+  completoBlanco: '/marca/logo-blanco.png',
+  palabra: '/marca/palabra.png',             // sólo CORE40, para tamaños chicos
+  palabraBlanca: '/marca/palabra-blanca.png',
+}
+
+// Reseñas reales de Google, elegidas por el studio y copiadas tal cual.
+// Formato: { nombre: '...', estrellas: 5, texto: '...' }
+// Mientras la lista esté vacía, la sección muestra sólo el enlace a Google Maps.
+export const RESENAS = []
 
 export const SITIO = {
   lema: 'Tu dosis diaria de movimiento',
   frase: 'Pilates ahora, café después',
-  direccion: 'Av. Siempre Viva 1234, Palermo, CABA',
+  direccion: 'Daniel Sánchez B., Cochabamba, Bolivia',
+  mapa: 'https://maps.app.goo.gl/oz2RiFGqVzGYkueG9',
   horarioAtencion: 'Lun a vie de 7 a 21 h · Sáb de 9 a 13 h',
-  telefono: '11 4000 0000',
-  instagram: '@core40.studio',
+  telefono: '+591 73347110',
+  instagram: 'core40.bo',
   pilares: [
     { titulo: 'Flexibilidad', texto: 'Movilidad real, ganada de a poco y sin forzar.', foto: 'flexibilidad' },
     { titulo: 'Fuerza',       texto: 'Centro fuerte, piernas y espalda que sostienen.', foto: 'fuerza' },

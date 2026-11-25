@@ -49,7 +49,11 @@ function nuevoUsuario({ id, nombre, email, telefono, pin, plan = 'ocho', rol = '
     telefono,
     pin,
     rol,
-    plan: { id: plan, clasesRestantes: PLANES[plan].clases, renuevaEl: proximaRenovacion() },
+    // Sin paquete hasta que el studio confirme el pago de uno.
+    plan: plan
+      ? { id: plan, clasesRestantes: PLANES[plan].clases, renuevaEl: proximaRenovacion() }
+      : { id: null, clasesRestantes: 0, renuevaEl: null },
+    solicitud: null,   // paquete pedido y todavía no activado
     preferencias: { camillaFavorita: null, recordatorios: true, docenteFavorito: null },
     notas: '',
     creado: creado ?? Date.now(),
@@ -283,7 +287,7 @@ export function useStudio() {
       email,
       telefono: datos.telefono.trim(),
       pin: datos.pin.trim(),
-      plan: datos.plan,
+      plan: null,
     })
     setDb((p) => ({ ...p, usuarios: [...p.usuarios, nuevo], sesion: nuevo.id }))
     return { ok: true, usuario: nuevo }
@@ -298,13 +302,43 @@ export function useStudio() {
     }))
   }, [])
 
-  const cambiarPlan = useCallback((planId) => {
+  // ---- paquetes -----------------------------------------------------------
+  // El alumno pide; sólo el studio activa, cuando recibió el pago.
+  const solicitarPlan = useCallback((planId) => {
+    if (planId !== null && !PLANES[planId]) return
     setDb((p) => ({
       ...p,
-      usuarios: p.usuarios.map((u) => (u.id === p.sesion
-        ? { ...u, plan: { ...u.plan, id: planId, clasesRestantes: PLANES[planId].clases } }
+      usuarios: p.usuarios.map((u) => (u.id === p.sesion && u.rol === 'alumno'
+        ? { ...u, solicitud: planId }
         : u)),
     }))
+  }, [])
+
+  const resolverSolicitud = useCallback((usuarioId, activar) => {
+    setDb((p) => {
+      if (p.usuarios.find((u) => u.id === p.sesion)?.rol !== 'admin') return p
+      const quien = p.usuarios.find((u) => u.id === usuarioId)
+      const pedido = quien?.solicitud
+      if (!pedido) return p
+      const { clases, nombre } = PLANES[pedido]
+      // La clase suelta se suma a lo que haya y no se renueva; un abono
+      // reemplaza al anterior.
+      const plan = !activar ? quien.plan
+        : pedido === 'suelta'
+          ? {
+            id: quien.plan.id ?? pedido,
+            clasesRestantes: quien.plan.clasesRestantes + clases,
+            renuevaEl: quien.plan.renuevaEl,
+          }
+          : { id: pedido, clasesRestantes: clases, renuevaEl: proximaRenovacion() }
+      return {
+        ...p,
+        usuarios: p.usuarios.map((u) => (u.id === usuarioId ? { ...u, plan, solicitud: null } : u)),
+        avisos: sumarAviso(p.avisos, usuarioId, activar
+          ? `Tu paquete "${nombre}" ya está activo.`
+          : `El studio no activó tu pedido de "${nombre}". Escribinos si tenés dudas.`),
+      }
+    })
   }, [])
 
   // ---- catálogo de clases -------------------------------------------------
@@ -410,7 +444,7 @@ export function useStudio() {
         return prev
       }
       if (yo.plan.clasesRestantes <= 0) {
-        out = { ok: false, motivo: 'No te quedan clases en el plan. Renovalo desde tu perfil.' }
+        out = { ok: false, motivo: 'No te quedan clases en el plan. Elegí un paquete.' }
         return prev
       }
 
@@ -838,7 +872,7 @@ export function useStudio() {
 
   return {
     db, usuario, esAdmin, alumnos, usuarioPorId,
-    entrar, registrar, salir, actualizarPerfil, cambiarPlan,
+    entrar, registrar, salir, actualizarPerfil, solicitarPlan, resolverSolicitud,
     docentes: DOCENTES, grilla: db.grilla, horariosDe, horariosDeFecha, clasesDeDia, clase,
     reservar, reservarSerie, moverCamilla, cancelar, misClases, estadisticas,
     cerrados: db.cerrados ?? [], estaCerrado, alternarCerrado,

@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node scripts/test.mjs",
-    "iconos": "node scripts/iconos.mjs"
+    "marca": "python3 scripts/marca.py"
   },
   "dependencies": {
     "react": "^18.3.1",
