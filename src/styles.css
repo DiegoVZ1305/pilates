@@ -243,11 +243,11 @@ button { cursor: pointer; }
 }
 .pill:disabled { opacity: .4; cursor: not-allowed; }
 
-.select, .campo select, .campo input, .buscador {
+.select, .campo select, .campo input, .campo textarea, .buscador {
   padding: 9px 12px; border: 1px solid var(--linea); border-radius: var(--r-sm);
   background: var(--blanco); transition: border-color .15s;
 }
-.campo input:focus, .campo select:focus, .buscador:focus, .select:focus {
+.campo input:focus, .campo select:focus, .campo textarea:focus, .buscador:focus, .select:focus {
   outline: none; border-color: var(--amarillo-osc);
 }
 .select, .buscador { width: 100%; margin-bottom: 14px; }
@@ -488,7 +488,8 @@ button { cursor: pointer; }
 .campo__lbl { font-size: 12.5px; font-weight: 600; color: var(--piedra); }
 .campo__ayuda { font-size: 11.5px; color: var(--gris); }
 .campo__error { font-size: 11.5px; color: var(--arcilla); font-weight: 600; }
-.campo--error input, .campo--error select { border-color: var(--arcilla); }
+.campo--error input, .campo--error select, .campo--error textarea { border-color: var(--arcilla); }
+.campo textarea { resize: vertical; min-height: 96px; font: inherit; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
 .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 14px; }
 
@@ -936,6 +937,11 @@ button { cursor: pointer; }
   font-family: var(--display); font-weight: 900; font-stretch: 118%; font-size: clamp(28px, 4vw, 42px);
   letter-spacing: -.02em; margin-top: 10px;
 }
+/* La regla se estira al llegar: es la pieza que termina de armar el título. */
+.seccion__cab::after {
+  content: ''; display: block; width: 54px; height: 3px; margin: 20px auto 0;
+  border-radius: 2px; background: var(--amarillo);
+}
 
 /* ---- barra superior ---- */
 .sitio__top {
@@ -984,9 +990,17 @@ button { cursor: pointer; }
 .hero__lema { font-size: clamp(15px, 2vw, 19px); color: rgba(255, 255, 255, .8); }
 .hero__botones { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 30px; }
 .hero__scroll {
-  position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%);
-  color: rgba(255, 255, 255, .6); text-decoration: none; font-size: 20px;
+  position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%);
+  width: 28px; height: 58px; padding-top: 2px;
+  text-align: center; font-size: 19px; line-height: 1; text-decoration: none;
+  color: rgba(255, 255, 255, .72);
 }
+/* La pista por la que baja la flecha, para que se lea el deslizamiento. */
+.hero__scroll::before {
+  content: ''; position: absolute; left: 50%; top: 4px; bottom: 6px; width: 1px;
+  background: linear-gradient(rgba(255, 255, 255, .45), rgba(255, 255, 255, 0));
+}
+.hero__scroll span { position: relative; display: block; }
 
 .btn--pill { border-radius: 999px; padding: 13px 28px; font-size: 15px; }
 .btn--claro {
@@ -1003,12 +1017,12 @@ button { cursor: pointer; }
 }
 /* En estas franjas el botón principal va en negro. */
 .manifiesto .btn--primario,
-.nosotros .btn--primario,
+.como .btn--primario,
 .proxima .btn--primario {
   background: var(--tinta-media); color: var(--blanco);
 }
 .manifiesto .btn--primario:hover,
-.nosotros .btn--primario:hover { background: var(--tinta); }
+.como .btn--primario:hover { background: var(--tinta); }
 
 .manifiesto__marca { width: 100%; max-width: 320px; margin: 0 auto; }
 .manifiesto__texto { max-width: 620px; display: flex; flex-direction: column; gap: 14px; }
@@ -1046,22 +1060,40 @@ button { cursor: pointer; }
 }
 .tipo__desc { font-size: 13.5px; color: var(--gris); line-height: 1.65; }
 
-/* ---- por qué nosotros ---- */
-.nosotros {
+/* ---- cómo se reserva el lugar ---- */
+.como {
   background: var(--amarillo-suave); color: var(--tinta);
   display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center;
   padding: 84px clamp(24px, 6vw, 90px);
 }
-.nosotros h2 {
+.como h2 {
   font-family: var(--display); font-weight: 900; font-stretch: 118%; font-size: clamp(27px, 3.6vw, 40px);
   letter-spacing: -.02em; margin: 10px 0 26px; max-width: 16ch;
 }
-.razones { list-style: none; margin: 0 0 30px; padding: 0; display: flex; flex-direction: column; gap: 18px; }
-.razones li { display: flex; flex-direction: column; gap: 3px; padding-left: 18px; border-left: 2px solid var(--amarillo-osc); }
-.razones strong { font-size: 15px; }
-.razones span { font-size: 13.5px; color: var(--gris); line-height: 1.6; }
+/* Los cuatro pasos, numerados y encadenados por una linea, como una receta. */
+.pasos {
+  list-style: none; margin: 0 0 30px; padding: 0;
+  display: flex; flex-direction: column; gap: 22px;
+}
+.pasos li {
+  position: relative; display: grid; grid-template-columns: 34px 1fr;
+  column-gap: 14px; row-gap: 3px;
+}
+.pasos li:not(:last-child)::before {
+  content: ''; position: absolute; left: 16px; top: 40px; bottom: -24px; width: 2px;
+  transform-origin: top;
+  background: linear-gradient(var(--amarillo-osc), rgba(220, 166, 0, 0));
+}
+.pasos__n {
+  grid-row: span 2; align-self: start; width: 34px; height: 34px;
+  display: grid; place-items: center; margin-top: -4px;
+  background: var(--tinta-media); color: var(--amarillo); border-radius: 50%;
+  font-family: var(--display); font-weight: 900; font-size: 16px; letter-spacing: 0;
+}
+.pasos strong { font-size: 15.5px; }
+.pasos__txt { font-size: 13.5px; color: var(--gris); line-height: 1.6; }
 
-.nosotros__plano { text-align: center; }
+.como__plano { text-align: center; }
 .minisala {
   background: var(--sala); border: 5px solid var(--tinta-media); border-radius: 10px;
   padding: 22px 18px; display: flex; flex-direction: column; gap: 14px;
@@ -1080,7 +1112,7 @@ button { cursor: pointer; }
   flex: 0 0 96px; height: 34px; border-style: dashed;
 }
 .minicamilla--prof i { width: 40%; height: 46%; }
-.nosotros__pie { font-size: 12.5px; color: var(--gris); margin-top: 14px; }
+.como__pie { font-size: 12.5px; color: var(--gris); margin-top: 14px; }
 
 /* ---- frase ---- */
 .frase {
@@ -1202,11 +1234,6 @@ button { cursor: pointer; }
   font-size: 11px !important; font-weight: 700; text-transform: uppercase;
   letter-spacing: .14em; color: var(--amarillo) !important; margin-bottom: 10px;
 }
-.pie__app { display: flex; flex-direction: column; gap: 7px; margin-top: 12px; }
-.pie__app span {
-  border: 1px solid rgba(255, 255, 255, .25); border-radius: var(--r-sm);
-  padding: 8px 12px; font-size: 11.5px; text-align: center;
-}
 .pie .btn { display: block; width: 100%; margin-bottom: 8px; }
 .pie__legal {
   margin-top: 44px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, .12);
@@ -1221,7 +1248,7 @@ button { cursor: pointer; }
 .auth__volver:hover { color: var(--amarillo); }
 
 /* ---- identidad ---- */
-.seccion__cab h2, .manifiesto__texto h2, .nosotros h2, .frase h2 { text-transform: uppercase; line-height: 1.08; }
+.seccion__cab h2, .manifiesto__texto h2, .como h2, .contacto__cab h1, .frase h2 { text-transform: uppercase; line-height: 1.08; }
 .barra h2 { font-family: var(--display); font-weight: 800; font-stretch: 112%; text-transform: uppercase; }
 
 /* el rayo del logo */
@@ -1233,7 +1260,12 @@ button { cursor: pointer; }
 .eyebrow::before, .hero__eyebrow::before { margin-right: .7em; }
 
 .hero__titulo img { width: min(680px, 100%); height: auto; }
-.hero__fondo { object-position: center 60%; }
+/* Margen de sobra arriba y abajo: la foto se corre con el scroll (--paralaje,
+   lo escribe useParalaje) y nunca deja ver el borde. */
+.hero__fondo {
+  object-position: center 60%; top: -10%; height: 120%;
+  translate: 0 var(--paralaje, 0);
+}
 
 .sitio__marca img { display: block; height: 20px; width: auto; }
 .sitio__marca--pie img { height: auto; width: 210px; max-width: 100%; }
@@ -1256,8 +1288,8 @@ button { cursor: pointer; }
   .sitio__acciones { margin-left: auto; }
   .manifiesto { grid-template-columns: 1fr; gap: 28px; text-align: center; padding: 56px 24px; }
   .manifiesto__texto { margin: 0 auto; }
-  .nosotros { grid-template-columns: 1fr; gap: 40px; padding: 64px 24px; }
-  .nosotros h2 { max-width: none; }
+  .como { grid-template-columns: 1fr; gap: 40px; padding: 64px 24px; }
+  .como h2 { max-width: none; }
   .pie__grid { grid-template-columns: 1fr 1fr; }
 }
 
@@ -1332,9 +1364,244 @@ button { cursor: pointer; }
   70%, 100% { opacity: 1; }
 }
 
+/* ---- revelado al entrar en pantalla --------------------------------------
+   La página sale entera y visible. Cada bloque marcado con `data-rev` tiene su
+   gesto en `--gesto`, según lo que sea: las tarjetas suben y crecen, los
+   títulos suben cortito y las dos mitades de una franja entran una de cada
+   lado. Así se nota qué está apareciendo y no todo hace lo mismo.
+
+   Donde el navegador sabe atar una animación al scroll (`animation-timeline`),
+   el gesto avanza con la rueda: lo lleva el compositor, sin escuchar el scroll
+   ni pasar por el hilo principal, y si volvés para arriba vuelve con vos.
+   Donde no, `useRevelar` lo dispara una sola vez al entrar. En los dos casos
+   se anima nada más que opacidad y transform, que son las dos baratas. */
+[data-rev] { --gesto: revelar; }
+.seccion__cab[data-rev] { --gesto: revelar-titulo; }
+.tipo[data-rev], .coach[data-rev], .resena[data-rev],
+.paquete[data-rev], .faq__item[data-rev] { --gesto: revelar-tarjeta; }
+.manifiesto__marca[data-rev], .como__txt[data-rev],
+.contacto__form[data-rev] { --gesto: revelar-izq; }
+.manifiesto__texto[data-rev], .como__plano[data-rev],
+.contacto__datos[data-rev] { --gesto: revelar-der; }
+.pilar[data-rev], .momento__foto[data-rev] { --gesto: revelar-foto; }
+
+@keyframes revelar         { from { opacity: 0; transform: translateY(26px); } }
+@keyframes revelar-titulo  { from { opacity: 0; transform: translateY(14px); } }
+@keyframes revelar-tarjeta { from { opacity: 0; transform: translateY(32px) scale(.97); } }
+@keyframes revelar-izq     { from { opacity: 0; transform: translateX(-30px); } }
+@keyframes revelar-der     { from { opacity: 0; transform: translateX(30px); } }
+/* Las fotos no suben ni se escalan al entrar: a ellas las dibuja la cortina. */
+@keyframes revelar-foto    { from { opacity: 0; } }
+
+/* ---- las fotos se van dibujando -----------------------------------------
+   Sobre cada foto hay dos capas que no pintan nada hasta que les toca: una
+   cortina del color del fondo que se retrae hacia abajo (`scaleY` desde el
+   borde de abajo, que es lo mismo que ver la foto apareciendo de arriba hacia
+   abajo) y una línea amarilla que baja justo por el filo, como el cabezal que
+   la está generando. Las dos son transform y opacidad: las mueve el
+   compositor, no repintan la foto.
+
+   En reposo la cortina está retraída y la línea apagada, así que si nada corre
+   —sin JS, con `prefers-reduced-motion` o si algo falla— la foto se ve entera. */
+.pilar, .momento__foto { position: relative; }
+.momento__foto {
+  max-width: 920px; margin: 0 auto;
+  overflow: hidden; border-radius: var(--r-lg);
+}
+.pilar::before, .momento__foto::before,
+.pilar::after, .momento__foto::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+}
+.pilar::before, .momento__foto::before {
+  z-index: 2; transform-origin: bottom; transform: scaleY(0);
+}
+.pilar::before { background: var(--blanco); }
+.momento__foto::before { background: var(--tinta); }
+/* La línea vive en el borde de arriba de su caja y la caja baja entera, así
+   que recorre la foto de punta a punta. Los 2 px de más la dejan del lado ya
+   dibujado del filo. */
+.pilar::after, .momento__foto::after {
+  z-index: 3; margin-top: -2px; opacity: 0;
+  background: linear-gradient(90deg, transparent, var(--amarillo), transparent)
+              top / 100% 2px no-repeat;
+}
+@keyframes cortina  { from { transform: scaleY(1); } to { transform: scaleY(0); } }
+@keyframes escanear {
+  0%        { opacity: 0; transform: translateY(0); }
+  12%, 88%  { opacity: .9; }
+  100%      { opacity: 0; transform: translateY(100%); }
+}
+/* Y la foto de abajo se asienta mientras la dibujan. Va en `scale`, no en
+   `transform`, para no pisarle el zoom del hover a los pilares. */
+@keyframes asentar-foto { from { scale: 1.07; } to { scale: 1; } }
+
+/* ---- los títulos se escriben y su regla se estira ---- */
+@keyframes escribir { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes estirar  { from { transform: scaleX(0); } }
+@keyframes armar-camilla { from { opacity: 0; scale: .78; } }
+@keyframes elegir-camilla {
+  from { background: rgba(255, 255, 255, .05); border-color: rgba(255, 255, 255, .22); scale: .88; }
+}
+
+/* En una sola columna no hay dos mitades que puedan venir de los costados. */
+@media (max-width: 680px) {
+  .manifiesto__marca[data-rev], .manifiesto__texto[data-rev],
+  .como__txt[data-rev], .como__plano[data-rev],
+  .contacto__form[data-rev], .contacto__datos[data-rev] { --gesto: revelar; }
+}
+
+/* ---- atado al scroll: la página se arma mientras bajás ------------------
+   Cada pieza avanza con la rueda dentro de su propio tramo de entrada, así que
+   lo que estás mirando se está armando y lo de más abajo todavía no empezó. */
+@supports (animation-timeline: view()) {
+  [data-rev] { animation-timeline: view(); }
+
+  /* Las piezas chicas no miran su propia entrada —una camilla de 60 px pasaría
+     en un suspiro— sino la del bloque que están armando, y para eso el bloque
+     se presta con `view-timeline-name`. También hace falta por otra razón: el
+     pilar recorta su contenido, y eso lo vuelve un scroller; sin el nombre, su
+     cortina y su línea medirían un scroll que no se mueve nunca. */
+  .pilar, .momento__foto, .seccion__cab, .pasos, .minisala {
+    view-timeline-name: --pieza;
+  }
+  .seccion__cab h2, .seccion__cab::after,
+  .pilar::before, .pilar::after, .pilar__foto,
+  .momento__foto::before, .momento__foto::after, .momento img,
+  .pasos li, .pasos li::before, .minisala .minicamilla {
+    animation-timeline: --pieza;
+  }
+
+  [data-rev], .seccion__cab h2, .seccion__cab::after,
+  .pilar::before, .pilar::after, .pilar__foto,
+  .momento__foto::before, .momento__foto::after, .momento img,
+  .pasos li, .pasos li::before, .minisala .minicamilla {
+    animation-duration: auto;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+  }
+  /* El recorrido va en porcentaje de la propia entrada, nunca en píxeles: un
+     bloque alto termina igual que uno chico y ninguno queda a medio encender
+     al final de la página. `--i` escalona a los hermanos de una grilla, que
+     entran todos a la misma altura (hasta cinco, el tope de las grillas). */
+  [data-rev] {
+    animation-name: var(--gesto);
+    animation-range: entry calc(4% + var(--i, 0) * 7%) entry calc(50% + var(--i, 0) * 7%);
+  }
+  /* En contacto la primera franja puede quedar a caballo del pliegue: ahí el
+     gesto termina en cuanto asoma, para que nadie tenga que hacer scroll para
+     leer un bloque a medio encender. */
+  .contacto__form, .contacto__datos { animation-range: entry 0% entry 26%; }
+
+  /* El título se escribe de izquierda a derecha y después se estira su regla. */
+  .seccion__cab h2 { animation-name: escribir; animation-range: entry 10% entry 62%; }
+  .seccion__cab::after { animation-name: estirar; animation-range: entry 52% entry 78%; }
+
+  /* Las fotos: la foto misma sólo se funde, en un tramo corto, para que el
+     bloque esté ahí enseguida; lo que se mira es la cortina retirándose con la
+     línea bajando por el filo. */
+  .pilar, .momento__foto { animation-range: entry 2% entry 14%; }
+  .pilar::before, .pilar::after, .pilar__foto {
+    animation-range: entry calc(8% + var(--i, 0) * 9%) entry calc(62% + var(--i, 0) * 9%);
+  }
+  .momento__foto::before, .momento__foto::after, .momento img {
+    animation-range: entry 8% entry 62%;
+  }
+  .pilar::before, .momento__foto::before { animation-name: cortina; }
+  .pilar::after, .momento__foto::after { animation-name: escanear; }
+  .pilar__foto, .momento img { animation-name: asentar-foto; }
+
+  /* Los pasos de la reserva se escriben de a uno, cada uno con su hilo. */
+  .pasos li {
+    animation-name: revelar;
+    animation-range: entry calc(10% + var(--i, 0) * 7%) entry calc(62% + var(--i, 0) * 7%);
+  }
+  .pasos li::before {
+    animation-name: estirar-hilo;
+    animation-range: entry calc(30% + var(--i, 0) * 7%) entry calc(78% + var(--i, 0) * 7%);
+  }
+
+  /* Y la sala se arma camilla por camilla, en el orden del plano (`--n`),
+     hasta que al final se enciende la elegida. */
+  .minisala .minicamilla {
+    animation-name: armar-camilla;
+    animation-range: entry calc(14% + var(--n, 0) * 4%) entry calc(32% + var(--n, 0) * 4%);
+  }
+  .minisala .minicamilla.es-elegida {
+    animation-name: armar-camilla, elegir-camilla;
+    animation-range: entry 28% entry 46%, entry 58% entry 86%;
+  }
+}
+
+/* ---- sin scroll-timeline: lo dispara useRevelar, una sola vez ---- */
+[data-rev].es-oculto { opacity: 0; }
+[data-rev].es-visible {
+  animation: var(--gesto) .55s var(--ease-out) calc(var(--i, 0) * 80ms) backwards;
+}
+.seccion__cab.es-visible h2 { animation: escribir .6s var(--ease-out) .1s backwards; }
+.seccion__cab.es-visible::after { animation: estirar .4s var(--ease-out) .5s backwards; }
+.pilar.es-visible::before, .momento__foto.es-visible::before {
+  animation: cortina .9s var(--ease-out) backwards;
+}
+.pilar.es-visible::after, .momento__foto.es-visible::after {
+  animation: escanear .9s linear backwards;
+}
+.pilar.es-visible .pilar__foto, .momento__foto.es-visible img {
+  animation: asentar-foto .9s var(--ease-out) backwards;
+}
+.como__txt.es-visible .pasos li {
+  animation: revelar .5s var(--ease-out) calc(160ms + var(--i, 0) * 90ms) backwards;
+}
+.como__txt.es-visible .pasos li::before {
+  animation: estirar-hilo .45s var(--ease-out) calc(320ms + var(--i, 0) * 90ms) backwards;
+}
+.como__plano.es-visible .minicamilla {
+  animation: armar-camilla .35s var(--ease-out) calc(var(--n, 0) * 55ms) backwards;
+}
+.como__plano.es-visible .minicamilla.es-elegida {
+  animation: armar-camilla .35s var(--ease-out) 280ms backwards,
+             elegir-camilla .45s var(--ease-out) .7s backwards;
+}
+@keyframes estirar-hilo { from { transform: scaleY(0); } }
+
+/* ---- la sección que se está leyendo, subrayada en el menú ---- */
+.sitio__nav a { position: relative; }
+.sitio__nav a.es-aca { color: var(--blanco); }
+.sitio__nav a.es-aca::after {
+  content: ''; position: absolute; left: 14px; right: 14px; bottom: 3px; height: 2px;
+  border-radius: 2px; background: var(--amarillo);
+  animation: subrayar .3s var(--ease-out) backwards;
+}
+.sitio__nav a.es-aca:hover::after { display: none; }
+@keyframes subrayar { from { opacity: 0; transform: scaleX(0); } }
+
+/* ---- la flecha de la portada invita a bajar ---- */
+.hero__scroll span { animation: deslizar 2.3s var(--ease-out) infinite; }
+.hero__scroll:hover { color: var(--blanco); }
+/* Asoma arriba, baja por la pista y se apaga abajo. Y vuelve a empezar. */
+@keyframes deslizar {
+  0%   { opacity: 0; transform: translateY(-8px); }
+  20%  { opacity: 1; }
+  65%  { opacity: 1; transform: translateY(20px); }
+  100% { opacity: 0; transform: translateY(32px); }
+}
+
+/* ---- con mouse, las tarjetas se levantan al pasar por encima ---- */
+@media (hover: hover) and (pointer: fine) {
+  .tipo, .coach, .resena, .paquete, .faq__item {
+    transition: transform .25s var(--ease-out), box-shadow .25s var(--ease-out),
+                border-color .15s ease;
+  }
+  .tipo:hover, .paquete:hover {
+    transform: translateY(-4px); box-shadow: var(--sombra-alta); border-color: var(--amarillo);
+  }
+  .coach:hover, .resena:hover, .faq__item:hover {
+    transform: translateY(-3px); box-shadow: var(--sombra);
+  }
+}
+
 /* ---- menos movimiento: quedan los fundidos, se van los desplazamientos ---- */
 @media (prefers-reduced-motion: reduce) {
-  .hero__fondo { animation: none; }
+  .hero__fondo { animation: none; translate: none; }
   .hero__contenido > *, .hoja, .menu, .camilla--elegida .camilla__estado {
     animation-name: aparecer; animation-delay: 0ms;
   }
@@ -1348,6 +1615,33 @@ button { cursor: pointer; }
   .pilar__foto, .rf { transition: none; }
   .pilar:hover .pilar__foto { transform: none; }
   .camilla--libre:hover .rf { translate: none; }
+
+  /* Nada se desplaza, no se dibuja ninguna pieza y no queda ningún bucle
+     dando vueltas: se apagan la cortina de las fotos, la línea que las
+     escanea, los títulos escribiéndose, el hilo de los pasos y la flecha. */
+  [data-rev].es-oculto { opacity: 1; }
+  .seccion__cab h2, .seccion__cab::after, .pasos li::before,
+  .pilar::before, .pilar::after, .pilar__foto,
+  .momento__foto::before, .momento__foto::after, .momento img,
+  .minisala .minicamilla.es-elegida, .hero__scroll span,
+  .sitio__nav a.es-aca::after, .faq__item p,
+  .seccion__cab.es-visible h2, .seccion__cab.es-visible::after,
+  .pilar.es-visible::before, .pilar.es-visible::after, .pilar.es-visible .pilar__foto,
+  .momento__foto.es-visible::before, .momento__foto.es-visible::after,
+  .momento__foto.es-visible img, .como__txt.es-visible .pasos li::before,
+  .como__plano.es-visible .minicamilla.es-elegida { animation: none; }
+
+  /* Pero los bloques siguen avisando que aparecen, con la opacidad sola: menos
+     movimiento no quiere decir una página muerta, quiere decir que nada se
+     mueve de lugar. El fundido también va atado al scroll donde se puede. */
+  [data-rev], .pasos li, .minisala .minicamilla { animation-name: aparecer; }
+  [data-rev].es-visible { animation: aparecer .4s ease backwards; }
+  .como__txt.es-visible .pasos li,
+  .como__plano.es-visible .minicamilla { animation: aparecer .3s ease backwards; }
+  .tipo, .coach, .resena, .paquete, .faq__item { transition: none; }
+  .tipo:hover, .coach:hover, .resena:hover, .paquete:hover, .faq__item:hover {
+    transform: none; box-shadow: none;
+  }
 }
 
 /* =========================================================================
@@ -1355,7 +1649,7 @@ button { cursor: pointer; }
    ========================================================================= */
 
 /* menos de 16px y el iPhone hace zoom al tocar el campo */
-.campo input, .campo select, .select, .buscador, .amano select { font-size: 16px; }
+.campo input, .campo select, .campo textarea, .select, .buscador, .amano select { font-size: 16px; }
 
 .hoja:focus { outline: none; }
 
@@ -1396,7 +1690,7 @@ button { cursor: pointer; }
   .usuario__btn { width: 40px; height: 40px; display: grid; place-items: center; }
   .check input { width: 20px; height: 20px; }
   .pie__grid a:not(.btn) { display: inline-block; padding: 8px 0; }
-  .hero__scroll { width: 44px; height: 44px; display: grid; place-items: center; bottom: 14px; }
+  .hero__scroll { width: 44px; bottom: 12px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1433,3 +1727,87 @@ button { cursor: pointer; }
   background: var(--amarillo); color: var(--tinta); border-radius: 50%; font-size: 13px; font-weight: 700;
 }
 .paso__ops { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* =========================================================================
+   Pestaña de contacto
+   ========================================================================= */
+.contacto { background: var(--blanco); }
+
+.contacto__cab {
+  background: var(--tinta); color: var(--blanco); text-align: center;
+  padding: 124px clamp(24px, 6vw, 90px) 72px;
+}
+.contacto__cab h1 {
+  font-family: var(--display); font-weight: 900; font-stretch: 118%;
+  font-size: clamp(30px, 5vw, 52px); letter-spacing: -.03em; margin-top: 12px;
+}
+.contacto__intro {
+  max-width: 54ch; margin: 18px auto 0; font-size: 15px; line-height: 1.75;
+  color: rgba(255, 255, 255, .75);
+}
+
+.contacto__grid {
+  display: grid; grid-template-columns: 1.15fr 1fr; gap: 20px; align-items: start;
+  padding: 64px clamp(24px, 6vw, 90px);
+}
+.contacto__form, .contacto__datos { border-radius: var(--r-lg); padding: 30px; }
+.contacto__form { border: 1px solid var(--linea); background: var(--blanco); }
+.contacto__datos { background: var(--amarillo-suave); }
+.contacto__form h2, .contacto__datos h2 {
+  font-family: var(--display); font-weight: 900; font-stretch: 118%;
+  text-transform: uppercase; font-size: 23px; letter-spacing: -.02em;
+}
+.contacto__nota { font-size: 12.5px; color: var(--gris); margin: 8px 0 20px; }
+.contacto__form .campo { margin-bottom: 16px; }
+.contacto__form .btn { margin-top: 4px; }
+/* El cartel queda siempre montado: el lector de pantalla anuncia lo nuevo. */
+.contacto__ok {
+  min-height: 20px; margin-top: 10px; font-size: 12.5px; font-weight: 600;
+  color: var(--salvia); line-height: 1.5;
+}
+
+.contacto__lista { margin: 20px 0 24px; display: flex; flex-direction: column; gap: 16px; }
+.contacto__lista dt {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .12em; color: var(--amarillo-prof); margin-bottom: 4px;
+}
+.contacto__lista dd { margin: 0; font-size: 14px; line-height: 1.6; }
+.contacto__lista a { color: inherit; font-weight: 600; }
+.contacto__mapa { display: inline-block; margin-top: 2px; color: var(--amarillo-prof) !important; }
+.contacto__botones { display: flex; flex-wrap: wrap; gap: 8px; }
+.contacto__pie { margin-top: 18px; font-size: 12px; color: var(--gris); }
+
+.contacto__faq { background: var(--hueso); padding: 76px clamp(24px, 6vw, 90px); }
+.faq { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+.faq__item {
+  background: var(--blanco); border: 1px solid var(--linea); border-radius: var(--r-md);
+  padding: 0 20px;
+}
+.faq__item summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 17px 0; font-size: 15px; font-weight: 600; cursor: pointer; list-style: none;
+}
+.faq__item summary::-webkit-details-marker { display: none; }
+/* Un más que se vuelve menos al abrir. */
+.faq__item summary span { position: relative; width: 20px; height: 20px; flex: 0 0 auto; }
+.faq__item summary span::before, .faq__item summary span::after {
+  content: ''; position: absolute; left: 0; right: 0; top: 9px; height: 2px;
+  border-radius: 2px; background: var(--amarillo-prof);
+  transition: transform .25s var(--ease-out);
+}
+.faq__item summary span::after { transform: rotate(90deg); }
+.faq__item[open] summary span::after { transform: rotate(180deg); }
+.faq__item p {
+  margin: 0 0 20px; font-size: 13.5px; color: var(--gris); line-height: 1.7;
+  animation: revelar .3s var(--ease-out) backwards;
+}
+
+@media (max-width: 900px) {
+  .contacto__grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 680px) {
+  .contacto__cab { padding: 100px 18px 52px; }
+  .contacto__grid, .contacto__faq { padding: 48px 18px; }
+  .contacto__form, .contacto__datos { padding: 22px; }
+  .contacto__form .btn, .contacto__botones .btn { width: 100%; }
+}

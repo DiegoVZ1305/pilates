@@ -122,17 +122,30 @@ export const SITIO = {
   mapa: 'https://maps.app.goo.gl/oz2RiFGqVzGYkueG9',
   horarioAtencion: 'Lun a vie de 7 a 21 h · Sáb de 9 a 13 h',
   telefono: '+591 73347110',
+  whatsapp: '59173347110',      // el mismo número, en formato wa.me
   instagram: 'core40.bo',
   pilares: [
     { titulo: 'Flexibilidad', texto: 'Movilidad real, ganada de a poco y sin forzar.', foto: 'flexibilidad' },
     { titulo: 'Fuerza',       texto: 'Centro fuerte, piernas y espalda que sostienen.', foto: 'fuerza' },
     { titulo: 'Resistencia',  texto: 'Series que te acompañan durante toda la semana.', foto: 'resistencia' },
   ],
-  razones: [
-    ['Grupos de 10', 'Nunca más de diez personas por clase. La profe te mira, te corrige y sabe tu nombre.'],
-    ['Elegís tu camilla', 'Reservás viendo el plano real de la sala y te ubicás donde estés más cómoda.'],
-    ['Profes formadas', 'Todo el equipo está certificado y arma progresiones según cómo venís.'],
-    ['Sin perder clases', 'Cancelás hasta 2 h antes y la clase vuelve a tu plan, sin llamar a nadie.'],
+  // Los cuatro pasos de la reserva, tal cual los vive el alumno en la app.
+  pasos: [
+    ['Creás tu cuenta', 'Tu email y un PIN de cuatro números. No hace falta llamar ni esperar respuesta.'],
+    ['Elegís día y clase', 'Ves la grilla real de la semana: qué clase es, qué profe la da y cuántos lugares quedan.'],
+    ['Elegís tu lugar', 'Se abre el plano de la sala y marcás la camilla que querés. La que elegís es la que te espera.'],
+    ['Queda reservada', 'La ves en tu cuenta y la cancelás hasta 2 h antes: la clase vuelve a tu plan, sin avisarle a nadie.'],
+  ],
+  // Preguntas de la pestaña de contacto.
+  preguntas: [
+    ['¿Necesito experiencia previa?',
+     'No. Las clases de Mat y Reformer son para todos los niveles y la profe adapta los ejercicios a cómo venís.'],
+    ['¿Qué llevo a la primera clase?',
+     'Ropa cómoda, medias antideslizantes y una botella de agua. El resto lo pone el studio.'],
+    ['¿Cómo pago el paquete?',
+     'Pedís el paquete desde la web y lo coordinás con el studio. Queda activo en cuanto confirmamos el pago.'],
+    ['¿Y si no puedo ir?',
+     'Cancelás desde tu cuenta hasta 2 h antes de la clase y no la pierdes. Si está completa, podés anotarte en la lista de espera.'],
   ],
 }
 

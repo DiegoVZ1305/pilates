@@ -30,13 +30,70 @@ que suelen publicarse con Mindbody:
 - **Hero** a pantalla completa con el nombre en tipografía display y botones de reserva.
 - **Manifiesto** con el logo sobre fondo de cemento, **tres pilares** (flexibilidad, fuerza, resistencia)
   y la **grilla de tipos de clase**.
-- **¿Por qué nosotros?** en amarillo suave, con el plano de la sala dibujado como argumento de
-  venta ("elegís tu camilla").
+- **Cómo reservar** en amarillo suave: los cuatro pasos de la reserva, numerados y
+  encadenados, al lado del plano de la sala con la camilla elegida ("elegís tu lugar").
+  Los pasos salen de `SITIO.pasos`.
 - **Frase** a todo ancho, **coaches** con las fichas del equipo y **paquetes** con precios.
 - **Horarios reales**: muestra la disponibilidad de verdad de los próximos días, tomada
   del mismo estado que usa la app. Sin sesión, cada botón lleva al login.
 - **Footer** con dirección, horario de atención, redes y accesos a reservar.
 - Las secciones tienen deep link (`/#horarios`, `/#paquetes`) para compartir.
+
+#### Pestaña de contacto
+`Contactanos` es una pestaña aparte (`/#contacto`), no una sección más de la landing: comparte
+la barra y el pie, y se abre y se cierra con el hash, así que atrás y adelante del navegador
+funcionan y el enlace se puede compartir.
+- **Formulario** de nombre, contacto, motivo y mensaje. El studio no tiene servidor que reciba
+  formularios: el mensaje se arma y se abre en WhatsApp ya escrito, para que lo envíe el alumno.
+- **Datos del studio**: dirección con "cómo llegar", horario de atención, teléfono e Instagram.
+- **Preguntas frecuentes** desplegables, de `SITIO.preguntas`.
+
+#### Movimiento
+Un ayudante por gesto, en `src/lib/animar.js`, y todos con la misma regla: el HTML sale
+completo y visible, y sólo si el script corre —y el visitante no pidió `prefers-reduced-motion`—
+se oculta primero para después encenderse.
+La web **se va armando mientras bajás**: cada pieza avanza con la rueda dentro de su propio
+tramo, así que lo que estás mirando se está construyendo y lo de más abajo todavía no empezó.
+
+- **Las fotos se dibujan.** Sobre cada una hay dos capas que no pintan nada hasta que les
+  toca: una cortina del color del fondo que se retrae hacia abajo y una línea amarilla que
+  baja justo por el filo, como el cabezal que la está generando; abajo, la foto se asienta
+  desde un 7 % de más. Son transform y opacidad, así que la foto no se repinta.
+- **Los títulos se escriben** de izquierda a derecha (`clip-path`) y recién después se estira
+  la regla amarilla que los cierra.
+- **La sala se arma camilla por camilla**, en el orden del plano (`--n`, que pone `SalaMini`),
+  y al final se enciende la elegida. Los pasos de "cómo reservar" se escriben de a uno y el
+  hilo que los encadena crece atrás de cada uno.
+- **Los bloques entran con su propio gesto.** Lo marcado con `data-rev` lee su animación de
+  `--gesto`: las tarjetas suben y crecen, los títulos suben cortito, las dos mitades de una
+  franja entran una de cada lado y las fotos sólo se funden, porque a ellas las dibuja la
+  cortina. `--i` escalona a los hermanos de una grilla, que entran todos a la misma altura.
+
+**Cómo está hecho, y por qué sale barato**: donde hay `animation-timeline: view()` (Chrome,
+Edge y Safari nuevos) el navegador ata cada animación al scroll y la mueve el compositor,
+sin un solo listener de scroll ni pasar por el hilo principal; si volvés para arriba, vuelve
+con vos. Se animan nada más que opacidad, `transform`, `scale` y `clip-path`.
+
+- El recorrido va en porcentaje de la entrada (`animation-range`), nunca en píxeles: un bloque
+  alto termina igual que uno chico y ninguno queda a medio encender al final de la página.
+- Las piezas chicas no miran su propia entrada —una camilla de 60 px pasaría en un suspiro—
+  sino la del bloque que están armando, que se presta con `view-timeline-name`. Hace falta
+  por otra razón también: `.pilar` recorta su contenido y eso lo vuelve un scroller, así que
+  sin el nombre su cortina mediría un scroll que no se mueve nunca.
+- En reposo la cortina está retraída y la línea apagada: si nada corre —sin JS, con
+  `prefers-reduced-motion` o si algo falla— la foto se ve entera.
+- `useRevelar` es el plan B para los navegadores sin scroll-timeline: las mismas piezas,
+  disparadas una sola vez al entrar con un `IntersectionObserver`. Lo que ya está a la vista
+  al cargar no se oculta.
+- `useSeccionALaVista` subraya en el menú la sección que se está leyendo y `useParalaje` deja
+  la foto de la portada un paso atrás del scroll. La flecha de la portada baja sola por su
+  pista, en bucle, y las tarjetas se levantan con el mouse.
+- **Con `prefers-reduced-motion: reduce` nada se mueve de lugar**: se apagan la cortina, la
+  línea, los títulos escribiéndose, el hilo de los pasos, el paralaje y la flecha. Lo que
+  queda es el fundido de cada bloque, con la opacidad sola — menos movimiento no es una
+  página muerta. Ojo al probar: Windows apaga esa preferencia en *Accesibilidad → Efectos
+  visuales → Efectos de animación*, y con eso en off no se ve ninguna de las animaciones de
+  arriba.
 
 **Fotos y logos**: los originales están en `Assets/`. `npm run marca` (Python 3 con Pillow)
 genera lo que usa la web en `public/marca/`, `public/fotos/`, los iconos y el manifest. Las
@@ -115,10 +172,12 @@ src/
   lib/config.js    studio, camillas, disposición de la sala, tipos de clase,
                    docentes, grilla base y planes        ← lo que se toca primero
   lib/fechas.js    días, ids de clase, "en 3 h", validaciones de hora
+  lib/animar.js    revelado al entrar en pantalla, sección a la vista y paralaje
   lib/db.js        estado completo (usuarios, reservas, espera, grilla, sala)
                    + todas las acciones, persistido en localStorage
   components/
-    Landing.jsx       la web: hero, paquetes, horarios, footer
+    Landing.jsx       la web: barra, hero, paquetes, horarios, footer y las dos pestañas
+    Contacto.jsx      la pestaña de contacto: formulario, datos del studio y preguntas
     Cuenta.jsx        la reserva del alumno con sesión, dentro de la web
     Auth.jsx          entrar y crear cuenta
     Reservar.jsx      semana, filtros y lista de horarios del día
