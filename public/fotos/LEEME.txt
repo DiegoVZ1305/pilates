@@ -1,0 +1,14 @@
+Dejá acá las fotos del studio y poné la ruta en src/lib/config.js -> FOTOS.
+
+Ejemplo:
+  public/fotos/sala.jpg   ->   FOTOS.hero = '/fotos/sala.jpg'
+
+Claves disponibles: hero, manifiesto, flexibilidad, fuerza, resistencia,
+frase, nosotros.
+
+Mientras una clave esté vacía se dibuja un bloque gráfico en su lugar, así
+que la página se ve terminada aunque todavía no tengas las fotos.
+
+Sugerencias de medidas:
+  hero y frase    1920 x 1080 (apaisada, se recorta a lo ancho)
+  pilares         900 x 1200 (vertical)
