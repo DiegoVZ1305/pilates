@@ -1248,7 +1248,7 @@ button { cursor: pointer; }
 .auth__volver:hover { color: var(--amarillo); }
 
 /* ---- identidad ---- */
-.seccion__cab h2, .manifiesto__texto h2, .como h2, .contacto__cab h1, .frase h2 { text-transform: uppercase; line-height: 1.08; }
+.seccion__cab h2, .manifiesto__texto h2, .como h2, .pagina__cab h1, .frase h2 { text-transform: uppercase; line-height: 1.08; }
 .barra h2 { font-family: var(--display); font-weight: 800; font-stretch: 112%; text-transform: uppercase; }
 
 /* el rayo del logo */
@@ -1731,17 +1731,24 @@ button { cursor: pointer; }
 /* =========================================================================
    Pestaña de contacto
    ========================================================================= */
-.contacto { background: var(--blanco); }
+.contacto, .turnos { background: var(--blanco); }
 
-.contacto__cab {
+/* ---- la invitación que cierra el inicio, donde estaba la grilla ----
+   Ojo: `.cierre` ya es de los cierres del panel, no lo toques. */
+.invita { background: var(--blanco); padding: 76px clamp(24px, 6vw, 90px) 88px; text-align: center; }
+.invita__nota { margin-top: 14px; font-size: 13px; color: var(--gris); }
+.horarios__nota { margin-top: 12px; font-size: 12.5px; color: var(--gris); }
+
+/* ---- la banda de arriba de las pestañas (reservar y contacto) ---- */
+.pagina__cab {
   background: var(--tinta); color: var(--blanco); text-align: center;
   padding: 124px clamp(24px, 6vw, 90px) 72px;
 }
-.contacto__cab h1 {
+.pagina__cab h1 {
   font-family: var(--display); font-weight: 900; font-stretch: 118%;
   font-size: clamp(30px, 5vw, 52px); letter-spacing: -.03em; margin-top: 12px;
 }
-.contacto__intro {
+.pagina__intro {
   max-width: 54ch; margin: 18px auto 0; font-size: 15px; line-height: 1.75;
   color: rgba(255, 255, 255, .75);
 }
@@ -1806,7 +1813,7 @@ button { cursor: pointer; }
   .contacto__grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 680px) {
-  .contacto__cab { padding: 100px 18px 52px; }
+  .pagina__cab { padding: 100px 18px 52px; }
   .contacto__grid, .contacto__faq { padding: 48px 18px; }
   .contacto__form, .contacto__datos { padding: 22px; }
   .contacto__form .btn, .contacto__botones .btn { width: 100%; }

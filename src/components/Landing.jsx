@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParalaje, useRevelar, useSeccionALaVista } from '../lib/animar'
 import { DISPOSICION, DOCENTES, FOTOS, LOGOS, PLANES, RESENAS, SITIO, STUDIO, TIPOS } from '../lib/config'
-import { etiquetaDia, proximosDias } from '../lib/fechas'
 import Contacto from './Contacto'
+import Turnos from './Turnos'
 import { Avatar } from './ui'
 
 function Foto({ nombre, etiqueta, className = '', diferida = true }) {
@@ -12,10 +12,13 @@ function Foto({ nombre, etiqueta, className = '', diferida = true }) {
 
 const SECCIONES = [
   ['clases', 'Clases'], ['como-reservar', 'Cómo reservar'], ['coaches', 'Coaches'],
-  ['paquetes', 'Paquetes'], ['horarios', 'Horarios'],
+  ['paquetes', 'Paquetes'],
 ]
 
-const paginaDelHash = () => (location.hash === '#contacto' ? 'contacto' : 'inicio')
+// Las dos pestañas que no son el inicio. Reservar no entra en el menú: ya está
+// el botón amarillo de la barra, y repetirlo era de más.
+const PAGINAS = { '#reservar': 'reservar', '#contacto': 'contacto' }
+const paginaDelHash = () => PAGINAS[location.hash] ?? 'inicio'
 
 /**
  * Los cuatro rayos del neón. Se apagan sólo si el script corre, así que sin él
@@ -73,13 +76,11 @@ function SalaMini() {
 }
 
 export default function Landing({ studio, onEntrar, cuenta }) {
-  // `cuenta` llega sólo con sesión de alumno: las reservas se hacen acá mismo.
+  // `cuenta` llega sólo con sesión de alumno; la reserva vive en su pestaña.
   const alumno = cuenta ? studio.usuario : null
-  const dias = proximosDias().slice(0, 7).filter((d) => studio.horariosDeFecha(d.iso).length > 0)
-  const [diaSel, setDiaSel] = useState(dias[0]?.iso)
-  const clases = diaSel ? studio.clasesDeDia(diaSel) : []
 
-  // Dos pestañas: la web y contacto. Van en el hash, así se pueden compartir.
+  // Tres pestañas: el inicio, reservar y contacto. Van en el hash, así se
+  // pueden compartir y el botón de atrás del navegador funciona.
   const [pagina, setPagina] = useState(paginaDelHash)
   const [destino, setDestino] = useState(null)   // sección a la que ir al volver al inicio
 
@@ -115,7 +116,14 @@ export default function Landing({ studio, onEntrar, cuenta }) {
 
   // Atrás y adelante del navegador cambian de pestaña.
   useEffect(() => {
-    const sinc = () => setPagina(paginaDelHash())
+    const sinc = () => {
+      const p = paginaDelHash()
+      setPagina(p)
+      // Un hash que no es pestaña es una sección del inicio: por ejemplo el
+      // "Ver paquetes" que la cuenta muestra cuando no te quedan clases.
+      const id = location.hash.slice(1)
+      if (p === 'inicio' && id) setDestino(id)
+    }
     window.addEventListener('hashchange', sinc)
     window.addEventListener('popstate', sinc)
     return () => {
@@ -124,12 +132,12 @@ export default function Landing({ studio, onEntrar, cuenta }) {
     }
   }, [])
 
-  // Deep link: si alguien entra con /#horarios, vamos directo a esa sección.
+  // Deep link: si alguien entra con /#paquetes, vamos directo a esa sección.
   // Lo repetimos al terminar de cargar, porque las tipografías y las fotos
   // mueven el alto de la página y dejarían el scroll a mitad de camino.
   useEffect(() => {
     const id = location.hash.slice(1)
-    if (!id || id === 'contacto') return
+    if (!id || paginaDelHash() !== 'inicio') return
     const ir = () => document.getElementById(id)?.scrollIntoView()
     ir()
     window.addEventListener('load', ir, { once: true })
@@ -156,22 +164,25 @@ export default function Landing({ studio, onEntrar, cuenta }) {
     bajarA(id)
   }
 
-  const verContacto = (e) => {
+  const verPagina = (p) => (e) => {
     e?.preventDefault()
     setMenu(false)
-    if (pagina !== 'contacto') {
-      history.pushState(null, '', '#contacto')
-      setPagina('contacto')
+    if (pagina !== p) {
+      history.pushState(null, '', '#' + p)
+      setPagina(p)
     }
     window.scrollTo(0, 0)
   }
 
-  const reservar = alumno ? ir('horarios') : onEntrar
+  // Reservar es siempre lo mismo, con sesión o sin ella: te lleva a la pestaña.
+  // Sin cuenta ahí ves la disponibilidad y recién entonces entrás.
+  const reservar = verPagina('reservar')
+  const verContacto = verPagina('contacto')
 
   return (
     <div className="sitio">
       {/* ---- barra ---- */}
-      <header className={'sitio__top' + (bajo || menu || pagina === 'contacto' ? ' es-solida' : '')}>
+      <header className={'sitio__top' + (bajo || menu || pagina !== 'inicio' ? ' es-solida' : '')}>
         <a className="sitio__marca" href="#inicio" onClick={ir('inicio')}>
           <img src={LOGOS.palabraBlanca} alt={STUDIO.nombre} />
         </a>
@@ -201,12 +212,17 @@ export default function Landing({ studio, onEntrar, cuenta }) {
           </a>
         </nav>
         <div className="sitio__acciones">
-          <button className="btn btn--primario btn--chico" onClick={reservar}>Reservar</button>
+          <button className="btn btn--primario btn--chico" onClick={reservar}
+                  aria-current={pagina === 'reservar' ? 'page' : undefined}>
+            Reservar
+          </button>
         </div>
       </header>
 
       <main ref={cuerpo}>
-        {pagina === 'contacto' ? <Contacto onReservar={reservar} /> : (
+        {pagina === 'reservar' ? (
+          <Turnos studio={studio} cuenta={cuenta} onEntrar={onEntrar} />
+        ) : pagina === 'contacto' ? <Contacto onReservar={reservar} /> : (
           <>
             {/* ---- hero ---- */}
             <section className="hero" id="inicio" ref={hero}>
@@ -405,53 +421,20 @@ export default function Landing({ studio, onEntrar, cuenta }) {
               </p>
             </section>
 
-            {/* ---- horarios ---- */}
-            <section className={'horarios' + (alumno ? ' es-cuenta' : '')} id="horarios">
+            {/* ---- invitación a reservar ---- */}
+            <section className="invita">
               <div className="seccion__cab" data-rev>
-                <p className="eyebrow">Horarios</p>
-                <h2>{alumno ? 'Reservá tu clase' : 'Mirá la disponibilidad de esta semana'}</h2>
+                <p className="eyebrow">Tu lugar</p>
+                <h2>{alumno ? 'Reservá tu próxima clase' : 'Vení a probar una clase'}</h2>
               </div>
-
-              {cuenta ?? (
-                <>
-                  <div className="horarios__dias">
-                    {dias.map((d) => (
-                      <button key={d.iso}
-                              className={'horarios__dia' + (d.iso === diaSel ? ' es-activo' : '')}
-                              onClick={() => setDiaSel(d.iso)}>
-                        <span>{d.esHoy ? 'Hoy' : d.nombreCorto}</span>
-                        <strong>{d.numero}</strong>
-                      </button>
-                    ))}
-                  </div>
-
-                  <p className="horarios__fecha">{etiquetaDia(dias.find((d) => d.iso === diaSel))}</p>
-
-                  <ul className="horarios__lista">
-                    {clases.map((c) => (
-                      <li key={c.hora} className={'turno' + (c.pasado ? ' es-pasado' : '')}>
-                        <span className="turno__hora">{c.hora}</span>
-                        <span className="turno__que">
-                          <strong>{c.tipo.nombre}</strong>
-                          <small>{c.docente.nombre} · {c.tipo.duracion} min</small>
-                        </span>
-                        <span className={'turno__cupo' + (c.libres === 0 ? ' es-lleno' : '')}>
-                          {c.pasado ? 'terminada' : c.libres === 0 ? 'completa' : `${c.libres} libres`}
-                        </span>
-                        {c.pasado
-                          ? <span className="turno__fin">—</span>
-                          : <button className="btn btn--chico btn--linea" onClick={reservar}>
-                              {c.libres === 0 ? 'Lista de espera' : 'Reservar'}
-                            </button>}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="horarios__cta">
-                    <button className="btn btn--primario btn--pill" onClick={reservar}>Reservar mi camilla</button>
-                  </div>
-                </>
-              )}
+              <div data-rev>
+                <button className="btn btn--primario btn--pill" onClick={reservar}>
+                  {alumno ? 'Ir a reservar' : 'Ver horarios y reservar'}
+                </button>
+                <p className="invita__nota">
+                  Mirás la disponibilidad real de la semana y elegís tu camilla en el plano.
+                </p>
+              </div>
             </section>
           </>
         )}

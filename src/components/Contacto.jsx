@@ -50,10 +50,10 @@ export default function Contacto({ onReservar }) {
 
   return (
     <div className="contacto">
-      <section className="contacto__cab">
+      <section className="pagina__cab">
         <p className="eyebrow">Contactanos</p>
         <h1>Escribinos y te contamos</h1>
-        <p className="contacto__intro">
+        <p className="pagina__intro">
           Si querés probar una clase, preguntar por los paquetes o no sabés con cuál empezar,
           mandanos un mensaje. Contestamos en el día, en horario del studio.
         </p>

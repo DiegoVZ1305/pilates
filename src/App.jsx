@@ -26,12 +26,13 @@ export default function App() {
 
   const { usuario, esAdmin } = studio
 
-  // Al entrar o crear la cuenta se vuelve a la web, directo a reservar.
+  // Al entrar o crear la cuenta se vuelve a la web, directo a reservar. El hash
+  // se escribe antes de volver, así la web ya nace en esa pestaña.
   useEffect(() => {
     if (!usuario) { setAbierta(null); return }
     if (publico !== 'cuenta') return
+    if (!esAdmin) history.replaceState(null, '', '#reservar')
     setPublico('sitio')
-    if (!esAdmin) setTimeout(() => document.getElementById('horarios')?.scrollIntoView())
   }, [usuario?.id])
 
   // La clase abierta se relee del estado para que el plano quede siempre al día.

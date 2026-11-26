@@ -34,15 +34,28 @@ que suelen publicarse con Mindbody:
   encadenados, al lado del plano de la sala con la camilla elegida ("elegís tu lugar").
   Los pasos salen de `SITIO.pasos`.
 - **Frase** a todo ancho, **coaches** con las fichas del equipo y **paquetes** con precios.
-- **Horarios reales**: muestra la disponibilidad de verdad de los próximos días, tomada
-  del mismo estado que usa la app. Sin sesión, cada botón lleva al login.
-- **Footer** con dirección, horario de atención, redes y accesos a reservar.
-- Las secciones tienen deep link (`/#horarios`, `/#paquetes`) para compartir.
+- **Invitación** final que lleva a reservar, y **footer** con dirección, horario de atención,
+  redes y accesos.
+- Las secciones tienen deep link (`/#paquetes`, `/#coaches`) para compartir.
 
-#### Pestaña de contacto
-`Contactanos` es una pestaña aparte (`/#contacto`), no una sección más de la landing: comparte
-la barra y el pie, y se abre y se cierra con el hash, así que atrás y adelante del navegador
-funcionan y el enlace se puede compartir.
+### Las tres pestañas
+El sitio no es una sola página larga: **inicio**, **reservar** (`/#reservar`) y **contacto**
+(`/#contacto`). Las tres comparten la barra y el pie, y se abren y se cierran con el hash, así
+que atrás y adelante del navegador funcionan y cada una se puede compartir. En el menú van las
+secciones del inicio y Contactanos; Reservar no, porque ya está el botón amarillo de la barra
+y repetirlo era de más.
+
+#### Reservar (`src/components/Turnos.jsx`)
+- **Sin sesión**: la disponibilidad de verdad de los próximos días, tomada del mismo estado que
+  usa la app, y cada botón lleva al acceso.
+- **Con sesión**: el mismo lugar lo ocupa la reserva del alumno (`Cuenta`), con sus clases
+  disponibles, avisos, reservas y cerrar sesión.
+- Al entrar o crear la cuenta, `App` escribe `#reservar` antes de volver a la web, así que el
+  alumno cae directo acá.
+- Ojo con los nombres: `Reservar.jsx` es el paso a paso de la reserva, que vive adentro de
+  `Cuenta`; `Turnos.jsx` es la pestaña que lo contiene.
+
+#### Contacto (`src/components/Contacto.jsx`)
 - **Formulario** de nombre, contacto, motivo y mensaje. El studio no tiene servidor que reciba
   formularios: el mensaje se arma y se abre en WhatsApp ya escrito, para que lo envíe el alumno.
 - **Datos del studio**: dirección con "cómo llegar", horario de atención, teléfono e Instagram.
@@ -101,8 +114,8 @@ rutas están en `FOTOS` y `LOGOS` dentro de `src/lib/config.js`; los textos, en 
 
 ### Cuenta y acceso
 - Entrar con email + PIN, o crear cuenta en dos pasos con validación de cada campo.
-- **El alumno no tiene panel**: al entrar vuelve a la web y la sección de horarios se
-  convierte en su reserva, con sus clases disponibles, avisos, reservas y cerrar sesión.
+- **El alumno no tiene panel**: al entrar vuelve a la web, a la pestaña de Reservar, que pasa
+  a ser su reserva con clases disponibles, avisos, reservas y cerrar sesión.
 - **El studio entra directo a su panel** y no ve las pantallas de alumno.
 
 ### Paquetes
@@ -176,7 +189,8 @@ src/
   lib/db.js        estado completo (usuarios, reservas, espera, grilla, sala)
                    + todas las acciones, persistido en localStorage
   components/
-    Landing.jsx       la web: barra, hero, paquetes, horarios, footer y las dos pestañas
+    Landing.jsx       la web: barra, pie, el inicio entero y cuál de las tres pestañas va
+    Turnos.jsx        la pestaña de reservar: disponibilidad pública o la reserva del alumno
     Contacto.jsx      la pestaña de contacto: formulario, datos del studio y preguntas
     Cuenta.jsx        la reserva del alumno con sesión, dentro de la web
     Auth.jsx          entrar y crear cuenta
